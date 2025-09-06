@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         wutong - 币安刷单助手
 // @namespace    https://x.com/wutongge_BTCC
-// @version      6.1
+// @version      7.0
 // @description  币安刷单助手
 // @author       @wutongge_BTCC
 // @match        https://www.binance.com/*/alpha/bsc/*
@@ -38,7 +38,10 @@
             <button id="cex-alpha-panel-close" style="position:absolute;right:18px;top:12px;width:32px;height:32px;border:none;background:#f5f6fa;border-radius:50%;font-size:20px;color:#888;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,color 0.2s;">×</button>
         </div>
         <div style="margin-bottom:14px;padding:0 28px;">
-            <span style="color:#4f8cff;font-weight:bold;">建议价: <span id="cex-suggest-price" style="color:#00bfae;font-weight:bold;font-size:1.1em;">--</span></span>
+           <span style="color:#4f8cff;font-weight:bold;"><span id="cex-suggest-price" style="color:#00bfae;font-weight:bold;font-size:1.1em;"></span></span>
+        </div>
+        <div style="margin-bottom:14px;padding:0 28px;">
+            <span style="color:#4f8cff;font-weight:bold;">剩余次数: <span id="cex-remaining" style="color:#ff6b35;font-weight:bold;font-size:1.1em;">--</span></span>
         </div>
         <div style="margin-bottom:12px;padding:0 28px;">
             <label style="color:#333;font-weight:500;">USDT: <input id="cex-input-volume" type="number" step="1" style="width:100px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;color:#222;padding:5px 10px;outline:none;font-size:1em;transition:border-color 0.2s;"></label>
@@ -56,6 +59,10 @@
             <button id="cex-btn-start" style="background:linear-gradient(90deg,#4f8cff,#00e0c6);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.08em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;">启动</button>
             <button id="cex-btn-stop" style="background:linear-gradient(90deg,#00e0c6,#4f8cff);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.08em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;margin-left:14px;">停止</button>
             <button id="cex-btn-stat" style="background:linear-gradient(90deg,#ffb347,#4f8cff);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.08em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;margin-left:14px;">统计</button>
+
+        </div>
+        <div style="margin-bottom:18px;padding:0 28px;">
+          <button id="cex-btn-save" style="background:linear-gradient(90deg,#4f8cff,#ff6b35);color:#fff;padding:7px 135px;border:none;border-radius:10px;font-size:1.02em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;">保存参数</button>
         </div>
         <div id="cex-alpha-panel-log" style="font-size:13px;color:#222;background:#f5f6fa;border-radius:8px;max-height:100px;overflow:auto;padding:8px 12px;margin:0 28px;box-shadow:0 0 8px #e0e0e0 inset;"></div>
         <style>
@@ -158,13 +165,102 @@
 
     // === 参数与逻辑 ===
     // 默认参数
-    let ORDER_PRICE_BUY = 0.050112;
-    let ORDER_PRICE_SELL = 0.050112;
+
     let ORDER_VOLUME = 975;
     let MAX_TRADES = 17;
     let ORDER_TIMEOUT_MS = 500000;
     let ABORT_ON_PRICE_WARNING = true;
     let stopTrading = true;
+
+    // 本地存储
+    const STORAGE_KEY = 'wutong_shuju';
+    const BACKUP_STORAGE_KEY = 'wutong_shuju2';
+    let REMAINING_TRADES = null; // 持久化的剩余次数
+
+    function updateRemainingDisplay() {
+        const el = document.getElementById('cex-remaining');
+        if (el) {
+            if (typeof REMAINING_TRADES === 'number' && !isNaN(REMAINING_TRADES)) {
+                el.innerText = REMAINING_TRADES;
+            } else {
+                el.innerText = '--';
+            }
+        }
+    }
+    function saveParamsToStorage() {
+        try {
+            const data = {
+                ORDER_VOLUME,
+                MAX_TRADES,
+                ORDER_TIMEOUT_MS,
+                ABORT_ON_PRICE_WARNING,
+                remainingTrades: REMAINING_TRADES
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            logit('参数已保存');
+        } catch (e) {
+            console.warn('保存参数失败:', e);
+        }
+    }
+    function saveBackupParamsToStorage() {
+        try {
+            const data = {
+                ORDER_VOLUME,
+                MAX_TRADES,
+                ORDER_TIMEOUT_MS,
+                ABORT_ON_PRICE_WARNING
+            };
+            localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(data));
+            logit('备份参数已保存到', BACKUP_STORAGE_KEY);
+        } catch (e) {
+            console.warn('保存备份参数失败:', e);
+        }
+    }
+    function loadParamsFromStorage() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+            const data = JSON.parse(raw);
+            if (typeof data.ORDER_VOLUME === 'number' && !isNaN(data.ORDER_VOLUME)) ORDER_VOLUME = data.ORDER_VOLUME;
+            if (typeof data.MAX_TRADES === 'number' && !isNaN(data.MAX_TRADES)) MAX_TRADES = data.MAX_TRADES;
+            if (typeof data.ORDER_TIMEOUT_MS === 'number' && !isNaN(data.ORDER_TIMEOUT_MS)) ORDER_TIMEOUT_MS = data.ORDER_TIMEOUT_MS;
+            if (typeof data.ABORT_ON_PRICE_WARNING === 'boolean') ABORT_ON_PRICE_WARNING = data.ABORT_ON_PRICE_WARNING;
+            if (typeof data.remainingTrades === 'number' && !isNaN(data.remainingTrades)) REMAINING_TRADES = data.remainingTrades;
+            logit('已从本地加载参数');
+        } catch (e) {
+            console.warn('读取参数失败:', e);
+        }
+    }
+
+    function resetParamsFromBackup() {
+        try {
+            const raw = localStorage.getItem(BACKUP_STORAGE_KEY);
+            if (!raw) {
+                logit('未找到备份参数，无法重置');
+                return;
+            }
+            const data = JSON.parse(raw);
+            if (typeof data.ORDER_VOLUME === 'number' && !isNaN(data.ORDER_VOLUME)) ORDER_VOLUME = data.ORDER_VOLUME;
+            if (typeof data.MAX_TRADES === 'number' && !isNaN(data.MAX_TRADES)) MAX_TRADES = data.MAX_TRADES;
+            if (typeof data.ORDER_TIMEOUT_MS === 'number' && !isNaN(data.ORDER_TIMEOUT_MS)) ORDER_TIMEOUT_MS = data.ORDER_TIMEOUT_MS;
+            if (typeof data.ABORT_ON_PRICE_WARNING === 'boolean') ABORT_ON_PRICE_WARNING = data.ABORT_ON_PRICE_WARNING;
+            REMAINING_TRADES = MAX_TRADES;
+            saveParamsToStorage();
+            // 更新UI
+            const volEl = document.getElementById('cex-input-volume');
+            const roundsEl = document.getElementById('cex-input-rounds');
+            const timeoutEl = document.getElementById('cex-input-timeout');
+            const abortEl = document.getElementById('cex-input-abort');
+            if (volEl) volEl.value = ORDER_VOLUME;
+            if (roundsEl) roundsEl.value = MAX_TRADES;
+            if (timeoutEl) timeoutEl.value = Math.floor(ORDER_TIMEOUT_MS/1000);
+            if (abortEl) abortEl.checked = ABORT_ON_PRICE_WARNING;
+            updateRemainingDisplay();
+            logit('已从备份重置参数并刷新剩余次数');
+        } catch (e) {
+            console.warn('从备份重置失败:', e);
+        }
+    }
 
     // 日志输出到面板
     function logit() {
@@ -183,16 +279,38 @@
 
     // 绑定面板事件
     function bindPanelEvents() {
+        // 先加载已保存的参数
+        loadParamsFromStorage();
         document.getElementById('cex-input-volume').value = ORDER_VOLUME;
         document.getElementById('cex-input-rounds').value = MAX_TRADES;
         document.getElementById('cex-input-timeout').value = Math.floor(ORDER_TIMEOUT_MS/1000);
         document.getElementById('cex-input-abort').checked = ABORT_ON_PRICE_WARNING;
+        updateRemainingDisplay();
 
         document.getElementById('cex-btn-start').onclick = function() {
             ORDER_VOLUME = parseFloat(document.getElementById('cex-input-volume').value);
             MAX_TRADES = parseInt(document.getElementById('cex-input-rounds').value);
             ORDER_TIMEOUT_MS = parseInt(document.getElementById('cex-input-timeout').value) * 1000;
             ABORT_ON_PRICE_WARNING = document.getElementById('cex-input-abort').checked;
+            // 启动时决定是否继续未完成的剩余次数
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    if (typeof data.remainingTrades === 'number' && data.remainingTrades > 0) {
+                        REMAINING_TRADES = data.remainingTrades;
+                        logit('检测到未完成的剩余次数，继续执行。剩余:', REMAINING_TRADES);
+                    } else {
+                        REMAINING_TRADES = MAX_TRADES;
+                    }
+                } else {
+                    REMAINING_TRADES = MAX_TRADES;
+                }
+            } catch (e) {
+                REMAINING_TRADES = MAX_TRADES;
+            }
+            saveParamsToStorage();
+            updateRemainingDisplay();
             stopTrading = false;
             logit('参数已更新，开始自动交易...');
             startTrading();
@@ -205,6 +323,22 @@
         document.getElementById('cex-btn-stat').onclick = function() {
             runStat();
         };
+        const saveBtn = document.getElementById('cex-btn-save');
+        if (saveBtn) {
+            saveBtn.onclick = function() {
+                ORDER_VOLUME = parseFloat(document.getElementById('cex-input-volume').value);
+                MAX_TRADES = parseInt(document.getElementById('cex-input-rounds').value);
+                ORDER_TIMEOUT_MS = parseInt(document.getElementById('cex-input-timeout').value) * 1000;
+                ABORT_ON_PRICE_WARNING = document.getElementById('cex-input-abort').checked;
+                // 保存主参数，并初始化剩余次数为当前循环次数
+                REMAINING_TRADES = MAX_TRADES;
+                saveParamsToStorage();
+                // 另外保存一份备份参数
+                saveBackupParamsToStorage();
+                updateRemainingDisplay();
+                alert('参数已保存，并创建备份');
+            };
+        }
     }
 
     // === 交易主逻辑（复用原有核心代码，略作调整） ===
@@ -512,14 +646,19 @@
      * 主交易循环，自动买入卖出刷交易量
      */
     async function startTrading() {
-      let tradeCount = 0;
-      while (tradeCount < MAX_TRADES) {
+      if (typeof REMAINING_TRADES !== 'number' || isNaN(REMAINING_TRADES)) {
+        REMAINING_TRADES = MAX_TRADES;
+        saveParamsToStorage();
+      }
+      updateRemainingDisplay();
+      while (REMAINING_TRADES > 0) {
         if (stopTrading) {
           logit('检测到 stopTrading 标志，自动刷单已被强制中断');
           break;
         }
         try {
-          logit(`开始第${tradeCount + 1}次买入...`);
+          const roundIndex = (MAX_TRADES - REMAINING_TRADES) + 1;
+          logit(`开始第${roundIndex}次买入...（剩余:${REMAINING_TRADES}）`);
           const buyResult = await buy(ORDER_VOLUME, ABORT_ON_PRICE_WARNING);
           logit('本次买入返回:', buyResult);
           if (buyResult && buyResult.status === 'completed') {
@@ -527,8 +666,15 @@
             const sellResult = await sell(ORDER_VOLUME, ABORT_ON_PRICE_WARNING);
             logit('本次卖出返回:', sellResult);
             if (sellResult && sellResult.status === 'completed') {
-              logit('卖出成功,继续下一轮交易');
-              tradeCount++;
+              // 成功买入+卖出，递减剩余次数并持久化
+              REMAINING_TRADES = Math.max(0, (REMAINING_TRADES || 0) - 1);
+              saveParamsToStorage();
+              updateRemainingDisplay();
+              logit('卖出成功,剩余次数递减为:', REMAINING_TRADES);
+              if (REMAINING_TRADES <= 0) {
+                logit('已完成全部循环次数');
+                break;
+              }
             } else {
               logit('卖出失败,暂停交易，返回值:', sellResult);
               alert('卖出失败,已停止交易');
@@ -547,9 +693,11 @@
           break;
         }
       }
-      if (tradeCount >= MAX_TRADES) {
+      if (REMAINING_TRADES <= 0) {
         logit('wutong提醒:已完成设定的交易次数');
         alert('wutong提醒:已完成设定的交易次数');
+        // 全部完成后，从备份中重置主参数与剩余次数
+        resetParamsFromBackup();
       }
     }
 
@@ -715,7 +863,8 @@
             html += `<div style=\"margin-top:10px;\"><b style=\"color:#4f8cff;\">${token}</b><br>`;
             for (const date in tokenStat[token]) {
                 const s = tokenStat[token][date];
-                const totalFee = (s.buyTotal + s.sellTotal) * 0.0001; // 万分之0.1
+                const netValue = s.sellTotal - s.buyTotal;
+                const totalFee = -(s.buyTotal * 0.0001 - netValue); // 万分之0.1
                 html += `<span style=\"color:#888;\">${date}</span>：<br>
                 买入总额：<span style=\"color:#00bfae;\">${s.buyTotal.toFixed(2)} USDT</span>（${s.buyCount}笔）<br>
                 卖出总额：<span style=\"color:#ff4f4f;\">${s.sellTotal.toFixed(2)} USDT</span>（${s.sellCount}笔）<br>
