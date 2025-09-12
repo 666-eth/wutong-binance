@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         wutong - 币安刷单助手
+// @name         wutong - 币安刷单助手（反向订单版）
 // @namespace    https://x.com/wutongge_BTCC
-// @version      7.0
+// @version      8.0
 // @description  币安刷单助手
 // @author       @wutongge_BTCC
 // @match        https://www.binance.com/*/alpha/bsc/*
@@ -34,7 +34,7 @@
         panel.innerHTML = `
         <div style="height:6px;width:100%;background:linear-gradient(90deg,#4f8cff,#00e0c6);border-radius:18px 18px 0 0;"></div>
         <div id="cex-alpha-panel-header" style="cursor:move;font-weight:bold;margin-bottom:16px;position:relative;letter-spacing:1px;font-size:1.18rem;padding:18px 28px 0 28px;color:#222;">
-            wutong - 币安刷单助手
+            wutong - 币安刷单助手（反向订单版）
             <button id="cex-alpha-panel-close" style="position:absolute;right:18px;top:12px;width:32px;height:32px;border:none;background:#f5f6fa;border-radius:50%;font-size:20px;color:#888;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,color 0.2s;">×</button>
         </div>
         <div style="margin-bottom:14px;padding:0 28px;">
@@ -166,8 +166,8 @@
     // === 参数与逻辑 ===
     // 默认参数
 
-    let ORDER_VOLUME = 975;
-    let MAX_TRADES = 17;
+    let ORDER_VOLUME = 255;
+    let MAX_TRADES = 65;
     let ORDER_TIMEOUT_MS = 500000;
     let ABORT_ON_PRICE_WARNING = true;
     let stopTrading = true;
@@ -344,8 +344,7 @@
     // === 交易主逻辑（复用原有核心代码，略作调整） ===
     // 订单类型常量
     const ORDER_TYPE = {
-      BUY: 'buy',
-      SELL: 'sell'
+      BUY: 'buy'
     };
 
     // 选择器配置（如需适配其他交易所请修改此处）
@@ -353,10 +352,6 @@
       [ORDER_TYPE.BUY]: {
         button: '.bn-button.bn-button__buy',
         logPrefix: '买入'
-      },
-      [ORDER_TYPE.SELL]: {
-        button: '.bn-button.bn-button__sell',
-        logPrefix: '卖出'
       },
       limitTab: '#bn-tab-LIMIT',
       priceInput: '#limitPrice',
@@ -478,6 +473,66 @@
       if (input) setInputValue(input, price);
     }
 
+    /** 获取价格精度（优先读取step，其次当前值的小数位） */
+    function getPricePrecision() {
+      const input = document.querySelector(SELECTORS.priceInput);
+      if (!input) return 6;
+      const step = input.getAttribute('step');
+      if (step && step.includes('.')) {
+        return step.split('.')[1].length;
+      }
+      const val = input.value || input.getAttribute('value') || '';
+      if (val && val.includes('.')) {
+        return val.split('.')[1].length;
+      }
+      return 6;
+    }
+
+    /** 计算反向订单价格（买入价下调1%） */
+    function calcReversePrice(buyPrice) {
+      const precision = Math.min(getPricePrecision(), 8);
+      const reversed = buyPrice * (1 - 0.01); // -1%
+      return Number(reversed.toFixed(precision));
+    }
+
+    /**
+     * 启用反向订单并可选设置卖出价格
+     * @param {number} price 反向卖出价格（默认同买入价）
+     */
+    function enableReverseOrder(price) {
+      try {
+        // 勾选“反向订单”复选框（通过文案定位，避免样式改动）
+        const labelNode = Array.from(document.querySelectorAll('label,div,span'))
+          .find(el => /反向订单/.test(el.textContent || ''));
+        if (labelNode) {
+          // 在当前容器或父容器查找checkbox
+          let container = labelNode.closest('div') || labelNode.parentElement;
+          let checkbox = null;
+          for (let i = 0; i < 3 && container && !checkbox; i++) {
+            checkbox = container.querySelector('input[type="checkbox"], [role="checkbox"]');
+            container = container.parentElement;
+          }
+          if (checkbox) {
+            const isChecked = checkbox.getAttribute('aria-checked') === 'true' || checkbox.checked;
+            if (!isChecked) {
+              checkbox.click();
+              logit('已勾选反向订单');
+            }
+          }
+        }
+        // 设置“限价卖出”价格输入框
+        const reversePriceInput = document.querySelector('input[placeholder*="限价卖出"], input#reverseLimitPrice, input[name*="reverse" i]');
+        if (reversePriceInput) {
+          setInputValue(reversePriceInput, price);
+          logit('已设置反向卖出价格为:', price);
+        } else {
+          logit('未找到“限价卖出”输入框，已仅勾选反向订单');
+        }
+      } catch (e) {
+        logit('启用反向订单时出现异常:', e.message || e);
+      }
+    }
+
     /**
      * 检查订单状态，判断是否已成交
      * @returns {Promise<{status: string, message?: string}>}
@@ -524,9 +579,9 @@
     }
 
     /**
-     * 通用下单函数（买入/卖出）
+     * 通用下单函数（仅买入，买入时自动启用反向订单）
      * @param {Object} options
-     * @param {'buy'|'sell'} options.type - 订单类型
+     * @param {'buy'} options.type - 订单类型
      * @param {number} options.price - 价格
      * @param {number} options.volume - 数量
      * @param {boolean} options.abortOnPriceWarning - 是否遇到价格警告时中止
@@ -534,7 +589,7 @@
      */
     async function placeOrder({ type, price, volume, abortOnPriceWarning = false }) {
       // 1. 切换到买/卖tab
-      const tabText = type === ORDER_TYPE.BUY ? '买入' : '卖出';
+      const tabText = '买入';
       const tab = await waitForElement(() => getTabByText(tabText));
       if (!tab) throw new Error('未找到' + tabText + 'tab');
       tab.click();
@@ -546,29 +601,15 @@
       if (!limitTab) throw new Error('未找到限价tab');
       limitTab.click();
       logit('已点击限价标签');
+      // 3. 买入设置数量与价格，并启用反向订单
+      setLimitPrice(price);
+      setVolume(volume);
+      const reversePrice = calcReversePrice(price);
+      enableReverseOrder(reversePrice);
+      logit(`已设置限价${price}和数量${volume}（反向订单价: ${reversePrice}）`);
 
-      // 3. 卖出时先设置价格再拉满滑块
-      if (type === ORDER_TYPE.SELL) {
-        setLimitPrice(price); // 先设置价格
-        const slider = document.querySelector('input[role="slider"]');
-        if (slider) {
-          setInputValue(slider, 100);
-          if (slider.value === "0") {
-            logit("卖出失败，无存货");
-            return { status: "no_stock", message: "无可卖资产" };
-          }
-        }
-      }
-
-      // 4. 买入才设置数量
-      if (type === ORDER_TYPE.BUY) {
-        setLimitPrice(price);
-        setVolume(volume);
-      }
-      logit(`已设置限价${price}` + (type === ORDER_TYPE.BUY ? `和数量${volume}` : '，全部可卖资产'));
-
-      // 5. 点击买/卖按钮
-      const config = SELECTORS[type];
+      // 4. 点击买入按钮
+      const config = SELECTORS[ORDER_TYPE.BUY];
       const actionButton = await waitForElement(config.button);
       if (!actionButton) throw new Error('未找到' + config.logPrefix + '按钮');
       actionButton.click();
@@ -598,7 +639,7 @@
       } catch (err) {
         // 如果没有弹窗出现就继续执行
       }
-      // 8. 检查手续费弹窗
+      // 5. 检查手续费弹窗
       try {
         const feeModal = await waitForElement(
           SELECTORS.feeModal,
@@ -609,22 +650,22 @@
           0
         );
         if (feeModal && feeModal.textContent.includes('预估手续费')) {
-          logit('检测到预估手续费弹窗');
+          logit('检测到订单弹窗');
           const confirmButton = await waitForElement(() => {
             const dialog = document.querySelector('div[role="dialog"]');
             if (!dialog) return null;
             const buttons = dialog.querySelectorAll('button');
-            return Array.from(buttons).find(btn => btn.textContent.includes('继续'));
+            return Array.from(buttons).find(btn => btn.textContent.includes('确认'));
           }, null, null, 5, 1000, 0);
-          if (confirmButton && confirmButton.textContent.includes('继续')) {
+          if (confirmButton && confirmButton.textContent.includes('确认')) {
             confirmButton.click();
-            logit('已点击预估手续费弹窗的继续按钮');
+            logit('已点击弹窗确认按钮');
           }
         }
       } catch (e) {
-        logit('未检测到预估手续费弹窗，继续...');
+        logit('未检测到弹窗确认按钮，继续...');
       }
-      // 9. 等待订单成交
+      // 6. 等待订单成交
       const orderResult = await checkOrderStatus();
       logit('订单状态:', orderResult);
       return orderResult || {status: 'unknown'};
@@ -636,11 +677,7 @@
         if (!price) throw new Error('未能获取买入建议价');
         return placeOrder({ type: ORDER_TYPE.BUY, price, volume, abortOnPriceWarning });
     }
-    async function sell(volume, abortOnPriceWarning = false) {
-        const price = await fetchSuggestPrice('sell');
-        if (!price) throw new Error('未能获取卖出建议价');
-        return placeOrder({ type: ORDER_TYPE.SELL, price, volume, abortOnPriceWarning });
-    }
+    // 已移除卖出函数，买入时由平台自动创建反向订单
 
     /**
      * 主交易循环，自动买入卖出刷交易量
@@ -662,22 +699,13 @@
           const buyResult = await buy(ORDER_VOLUME, ABORT_ON_PRICE_WARNING);
           logit('本次买入返回:', buyResult);
           if (buyResult && buyResult.status === 'completed') {
-            logit('买入成功,开始卖出...');
-            const sellResult = await sell(ORDER_VOLUME, ABORT_ON_PRICE_WARNING);
-            logit('本次卖出返回:', sellResult);
-            if (sellResult && sellResult.status === 'completed') {
-              // 成功买入+卖出，递减剩余次数并持久化
-              REMAINING_TRADES = Math.max(0, (REMAINING_TRADES || 0) - 1);
-              saveParamsToStorage();
-              updateRemainingDisplay();
-              logit('卖出成功,剩余次数递减为:', REMAINING_TRADES);
-              if (REMAINING_TRADES <= 0) {
-                logit('已完成全部循环次数');
-                break;
-              }
-            } else {
-              logit('卖出失败,暂停交易，返回值:', sellResult);
-              alert('卖出失败,已停止交易');
+            // 买入成功，由平台自动创建反向订单；直接递减剩余次数
+            REMAINING_TRADES = Math.max(0, (REMAINING_TRADES || 0) - 1);
+            saveParamsToStorage();
+            updateRemainingDisplay();
+            logit('买入成功，已自动创建反向订单（由平台）。剩余次数:', REMAINING_TRADES);
+            if (REMAINING_TRADES <= 0) {
+              logit('已完成全部循环次数');
               break;
             }
           } else {
@@ -735,7 +763,7 @@
                     nextBtn.click();
                     let retry = 0;
                     while (retry < 20) {
-                        await sleep(100);
+                        await sleep(20);
                         const newFirstRow = document.querySelector('table tbody tr');
                         let newKey = newFirstRow ? newFirstRow.innerText : '';
                         if (newKey && newKey !== firstKey) break;
