@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         wutong - 币安刷单助手（反向订单版）
+// @name         wutong - 币安刷单助手
 // @namespace    https://x.com/wutongge_BTCC
 // @version      8.0
 // @description  币安刷单助手
@@ -34,7 +34,7 @@
         panel.innerHTML = `
         <div style="height:6px;width:100%;background:linear-gradient(90deg,#4f8cff,#00e0c6);border-radius:18px 18px 0 0;"></div>
         <div id="cex-alpha-panel-header" style="cursor:move;font-weight:bold;margin-bottom:16px;position:relative;letter-spacing:1px;font-size:1.18rem;padding:18px 28px 0 28px;color:#222;">
-            wutong - 币安刷单助手（反向订单版）
+            wutong - 币安刷单助手 8.0 
             <button id="cex-alpha-panel-close" style="position:absolute;right:18px;top:12px;width:32px;height:32px;border:none;background:#f5f6fa;border-radius:50%;font-size:20px;color:#888;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,color 0.2s;">×</button>
         </div>
         <div style="margin-bottom:14px;padding:0 28px;">
@@ -56,13 +56,15 @@
             <label style="color:#333;font-weight:500;"><input id="cex-input-abort" type="checkbox" style="accent-color:#4f8cff;">遇警告中止</label>
         </div>
         <div style="margin-bottom:18px;padding:0 28px;">
-            <button id="cex-btn-start" style="background:linear-gradient(90deg,#4f8cff,#00e0c6);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.08em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;">启动</button>
-            <button id="cex-btn-stop" style="background:linear-gradient(90deg,#00e0c6,#4f8cff);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.08em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;margin-left:14px;">停止</button>
-            <button id="cex-btn-stat" style="background:linear-gradient(90deg,#ffb347,#4f8cff);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.08em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;margin-left:14px;">统计</button>
+            <button id="cex-btn-start" style="background:linear-gradient(90deg,#4f8cff,#00e0c6);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.08em;font-weight:bold;box-shadow:0 2px 10px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;">启动</button>
+            <button id="cex-btn-stop" style="background:linear-gradient(90deg,#00e0c6,#4f8cff);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.08em;font-weight:bold;box-shadow:0 2px 10px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;margin-left:18px;">停止</button>
+            <button id="cex-btn-stat" style="background:linear-gradient(90deg,#ffb347,#4f8cff);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.08em;font-weight:bold;box-shadow:0 2px 10px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;margin-left:18px;">统计</button>
 
         </div>
         <div style="margin-bottom:18px;padding:0 28px;">
-          <button id="cex-btn-save" style="background:linear-gradient(90deg,#4f8cff,#ff6b35);color:#fff;padding:7px 135px;border:none;border-radius:10px;font-size:1.02em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;">保存参数</button>
+          <button id="cex-btn-save" style="background:linear-gradient(90deg,#4f8cff,#ff6b35);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.02em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;">保存参数</button>
+          <button id="cex-btn-lock" style="background:linear-gradient(90deg,#4f8cff,#2EBD85);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.02em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;margin-left:4px;">锁一手价</button>
+          <button id="cex-btn-quick-sell" style="background:linear-gradient(90deg,#F6465D,#F6465D);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.02em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;margin-left:4px;">快卖</button>
         </div>
         <div id="cex-alpha-panel-log" style="font-size:13px;color:#222;background:#f5f6fa;border-radius:8px;max-height:100px;overflow:auto;padding:8px 12px;margin:0 28px;box-shadow:0 0 8px #e0e0e0 inset;"></div>
         <style>
@@ -168,8 +170,8 @@
 
     let ORDER_VOLUME = 255;
     let MAX_TRADES = 65;
-    let ORDER_TIMEOUT_MS = 500000;
-    let ABORT_ON_PRICE_WARNING = true;
+    let ORDER_TIMEOUT_MS = 5000; // 固定为200秒
+    let ABORT_ON_PRICE_WARNING = false;
     let stopTrading = true;
 
     // 本地存储
@@ -283,14 +285,14 @@
         loadParamsFromStorage();
         document.getElementById('cex-input-volume').value = ORDER_VOLUME;
         document.getElementById('cex-input-rounds').value = MAX_TRADES;
-        document.getElementById('cex-input-timeout').value = Math.floor(ORDER_TIMEOUT_MS/1000);
+        document.getElementById('cex-input-timeout').value = Math.floor(ORDER_TIMEOUT_MS/200);
         document.getElementById('cex-input-abort').checked = ABORT_ON_PRICE_WARNING;
         updateRemainingDisplay();
 
         document.getElementById('cex-btn-start').onclick = function() {
             ORDER_VOLUME = parseFloat(document.getElementById('cex-input-volume').value);
             MAX_TRADES = parseInt(document.getElementById('cex-input-rounds').value);
-            ORDER_TIMEOUT_MS = parseInt(document.getElementById('cex-input-timeout').value) * 1000;
+            ORDER_TIMEOUT_MS = parseInt(document.getElementById('cex-input-timeout').value) * 200;
             ABORT_ON_PRICE_WARNING = document.getElementById('cex-input-abort').checked;
             // 启动时决定是否继续未完成的剩余次数
             try {
@@ -318,7 +320,7 @@
         document.getElementById('cex-btn-stop').onclick = function() {
             stopTrading = true;
             logit('停止交易刷新页面');
-            setTimeout(() => location.reload(), 1000);
+            setTimeout(() => location.reload(), 200);
         };
         document.getElementById('cex-btn-stat').onclick = function() {
             runStat();
@@ -339,12 +341,102 @@
                 alert('参数已保存，并创建备份');
             };
         }
+        // 锁定一手价按钮（完全按照你提供的实现）
+        const lockBtn = document.getElementById('cex-btn-lock');
+        const quickSellBtn = document.getElementById('cex-btn-quick-sell');
+        if (lockBtn) {
+            let priceUpdateInterval = null;
+            function updatePrice() {
+                // 判断当前是否是买入窗口（按你的选择器）
+                const buyTab = document.querySelector('#bn-tab-0');
+                const isBuyTabActive = buyTab && buyTab.classList && buyTab.classList.contains('active');
+                // 如果有正在运行的 interval 需要清除
+                if (priceUpdateInterval) {
+                    clearInterval(priceUpdateInterval);
+                }
+                // 设置新的 interval 更新价格
+                priceUpdateInterval = setInterval(() => {
+                    let priceValue = '';
+                    let finalPrice = 0;
+                    if (isBuyTabActive) {
+                        // 如果是买入窗口，选择“卖出”价格（按你的选择器）
+                        const priceElement = document.querySelector('div.flex-1.cursor-pointer[style*="--color-Buy"]');
+                        priceValue = priceElement ? priceElement.textContent.trim() : '';
+                        if (priceValue) {
+                            finalPrice = parseFloat(priceValue) * 1.00001;  // 买入价格乘以 1.00001
+                        }
+                    } else {
+                        // 如果是卖出窗口，选择“买入”价格（按你的选择器）
+                        const priceElement = document.querySelector('div.flex-1.cursor-pointer[style*="--color-Sell"]');
+                        priceValue = priceElement ? priceElement.textContent.trim() : '';
+                        if (priceValue) {
+                            finalPrice = parseFloat(priceValue) * 0.9999;  // 卖出价格乘以 0.9999
+                        }
+                    }
+                    // 更新到输入框
+                    const limitPriceInput = document.querySelector('#limitPrice');
+                    if (limitPriceInput && finalPrice) {
+                        setInputValue(limitPriceInput, Number(finalPrice).toFixed(8));
+                    }
+                }, 100); // 每100ms更新一次
+            }
+            lockBtn.onclick = function() {
+                updatePrice();
+                // 监听 tab 切换事件，动态重新调用 updatePrice（按你的实现）
+                document.querySelectorAll('.bn-tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        updatePrice();
+                    });
+                });
+                logit('锁定一手价已启动（使用你的算法与选择器）');
+            };
+        }
+        // 快卖按钮：执行你提供的“卖出页面”脚本逻辑
+        if (quickSellBtn) {
+            quickSellBtn.onclick = async function() {
+                async function clickSellTab() {
+                    const activeTab = document.querySelector('.bn-tab.bn-tab__buySell[aria-selected="true"]');
+                    if (activeTab && activeTab.textContent.trim() === '卖出') {
+                        return true;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    const tabs = Array.from(document.querySelectorAll('.bn-tab.bn-tab__buySell'));
+                    const sellTab = tabs.find(el => el.textContent.trim() === '卖出');
+                    if (!sellTab) return false;
+                    sellTab.click();
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    return true;
+                }
+                function setSliderMax() {
+                    const getSlider = () => {
+                        const list = Array.from(document.querySelectorAll('input[role="slider"]'));
+                        return list.find(el => el.offsetParent !== null) || list[0] || null;
+                    };
+                    const slider = getSlider();
+                    if (!slider) return;
+                    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+                    setter.call(slider, '100');
+                    slider.dispatchEvent(new Event('input', { bubbles: true }));
+                    slider.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                const ok = await clickSellTab();
+                if (!ok) { logit('快卖：未找到卖出tab'); return; }
+                setSliderMax();
+                let sellBtn = document.querySelector('button.bn-button__sell');
+                if (sellBtn) { sellBtn.click(); }
+                await new Promise(resolve => setTimeout(resolve, 300));
+                let btn2 = document.evaluate('//*[@id="__APP"]/div[3]/div/div/button', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                if (btn2) btn2.click();
+                logit('已执行快卖');
+            };
+        }
     }
 
     // === 交易主逻辑（复用原有核心代码，略作调整） ===
     // 订单类型常量
     const ORDER_TYPE = {
-      BUY: 'buy'
+      BUY: 'buy',
+      SELL: 'sell'
     };
 
     // 选择器配置（如需适配其他交易所请修改此处）
@@ -352,6 +444,10 @@
       [ORDER_TYPE.BUY]: {
         button: '.bn-button.bn-button__buy',
         logPrefix: '买入'
+      },
+      [ORDER_TYPE.SELL]: {
+        button: '.bn-button.bn-button__sell',
+        logPrefix: '卖出'
       },
       limitTab: '#bn-tab-LIMIT',
       priceInput: '#limitPrice',
@@ -376,7 +472,7 @@
       onReady = null,
       maxAttempts = 10,
       interval = 2000,
-      initialDelay = 1000
+      initialDelay = 100
     ) {
       return new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -473,63 +569,89 @@
       if (input) setInputValue(input, price);
     }
 
-    /** 获取价格精度（优先读取step，其次当前值的小数位） */
-    function getPricePrecision() {
-      const input = document.querySelector(SELECTORS.priceInput);
-      if (!input) return 6;
-      const step = input.getAttribute('step');
-      if (step && step.includes('.')) {
-        return step.split('.')[1].length;
-      }
-      const val = input.value || input.getAttribute('value') || '';
-      if (val && val.includes('.')) {
-        return val.split('.')[1].length;
-      }
-      return 6;
-    }
-
-    /** 计算反向订单价格（买入价下调1%） */
-    function calcReversePrice(buyPrice) {
-      const precision = Math.min(getPricePrecision(), 8);
-      const reversed = buyPrice * (1 - 0.01); // -1%
-      return Number(reversed.toFixed(precision));
-    }
-
-    /**
-     * 启用反向订单并可选设置卖出价格
-     * @param {number} price 反向卖出价格（默认同买入价）
-     */
-    function enableReverseOrder(price) {
+    // 卖出无存货时，切换买入->卖出页面两次
+    async function toggleBuySellTwice() {
       try {
-        // 勾选“反向订单”复选框（通过文案定位，避免样式改动）
-        const labelNode = Array.from(document.querySelectorAll('label,div,span'))
-          .find(el => /反向订单/.test(el.textContent || ''));
-        if (labelNode) {
-          // 在当前容器或父容器查找checkbox
-          let container = labelNode.closest('div') || labelNode.parentElement;
-          let checkbox = null;
-          for (let i = 0; i < 3 && container && !checkbox; i++) {
-            checkbox = container.querySelector('input[type="checkbox"], [role="checkbox"]');
-            container = container.parentElement;
+        for (let i = 0; i < 2; i++) {
+          const buyTab = await waitForElement(() => getTabByText('买入'));
+          if (buyTab) {
+            buyTab.click();
+            await new Promise(r => setTimeout(r, 200));
           }
-          if (checkbox) {
-            const isChecked = checkbox.getAttribute('aria-checked') === 'true' || checkbox.checked;
-            if (!isChecked) {
-              checkbox.click();
-              logit('已勾选反向订单');
-            }
+          const sellTab = await waitForElement(() => getTabByText('卖出'));
+          if (sellTab) {
+            sellTab.click();
+            await new Promise(r => setTimeout(r, 200));
           }
         }
-        // 设置“限价卖出”价格输入框
-        const reversePriceInput = document.querySelector('input[placeholder*="限价卖出"], input#reverseLimitPrice, input[name*="reverse" i]');
-        if (reversePriceInput) {
-          setInputValue(reversePriceInput, price);
-          logit('已设置反向卖出价格为:', price);
+        logit('已切换买入/卖出页面2次');
+      } catch (e) {
+        logit('切换买入/卖出页面出错:', e);
+      }
+    }
+
+    // 尝试点击卖出表单中的“100%/最大/全部/MAX”按钮
+    async function clickSellMax() {
+      try {
+        const sellTab = await waitForElement(() => getTabByText('卖出'));
+        if (sellTab) {
+          sellTab.click();
+          await new Promise(r => setTimeout(r, 120));
+        }
+        const dialog = document;
+        const candidates = Array.from(dialog.querySelectorAll('button, span, div'));
+        const btn = candidates.find(el => el && typeof el.textContent === 'string' &&
+          (el.textContent.trim() === '100%' ||
+           el.textContent.includes('100%') ||
+           el.textContent.includes('最大') ||
+           el.textContent.toUpperCase().includes('MAX') ||
+           el.textContent.includes('全部')));
+        if (btn) {
+          btn.click();
+          logit('已点击卖出最大(100%)按钮');
+          await new Promise(r => setTimeout(r, 180));
         } else {
-          logit('未找到“限价卖出”输入框，已仅勾选反向订单');
+          logit('未找到卖出最大(100%)按钮');
         }
       } catch (e) {
-        logit('启用反向订单时出现异常:', e.message || e);
+        logit('点击卖出最大按钮出错:', e);
+      }
+    }
+
+    // 取消所有进行中的订单（点击“全部取消”，并确认）
+    async function cancelAllOpenOrders() {
+      try {
+        const cancelAllByXPath = document.evaluate('//*[@id="bn-tab-pane-orderOrder"]/div/div[3]/div/div/div[1]/table/thead/tr/th[9]/div', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        let cancelAllBtn = cancelAllByXPath;
+        if (!cancelAllBtn) {
+          cancelAllBtn = Array.from(document.querySelectorAll('#bn-tab-pane-orderOrder th div, #bn-tab-pane-orderOrder th button, #bn-tab-pane-orderOrder th span'))
+            .find(el => el && typeof el.textContent === 'string' && el.textContent.includes('全部取消')) || null;
+        }
+        if (cancelAllBtn) {
+          cancelAllBtn.click();
+          logit('已点击全部取消按钮');
+          await new Promise(r => setTimeout(r, 150));
+          let confirmBtn = document.evaluate('//*[@id="__APP"]/div[3]/div/div/div[2]/button', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+          if (!confirmBtn) {
+            const dialog = document.querySelector('div[role="dialog"], .bn-modal, .bn-dialog');
+            if (dialog) {
+              confirmBtn = Array.from(dialog.querySelectorAll('button'))
+                .find(b => ['确认', '确定', '是', '继续', '确认取消', '取消订单']
+                  .some(t => b.textContent && b.textContent.includes(t))) || null;
+            }
+          }
+          if (confirmBtn) {
+            confirmBtn.click();
+            logit('已确认取消全部订单');
+            await new Promise(r => setTimeout(r, 300));
+          } else {
+            logit('未找到确认取消按钮');
+          }
+        } else {
+          logit('未找到全部取消按钮');
+        }
+      } catch (err) {
+        logit('取消全部订单时出错:', err);
       }
     }
 
@@ -565,11 +687,11 @@
           }
         };
         setTimeout(checkOrder, 1000 + Math.random() * 2000);
-        timeoutId = setTimeout(() => {
+        timeoutId = setTimeout(async () => {
           if (finished) return;
           finished = true;
-          logit('订单超时未成交');
-          alert('订单可能无法正常成交,请人工检查并调整价格');
+          logit('订单超时未成交，执行全部取消');
+          await cancelAllOpenOrders();
           resolve({
             status: 'timeout',
             message: '订单超时未成交,需要人工干预'
@@ -579,96 +701,157 @@
     }
 
     /**
-     * 通用下单函数（仅买入，买入时自动启用反向订单）
+     * 通用下单函数（买入/卖出）
      * @param {Object} options
-     * @param {'buy'} options.type - 订单类型
+     * @param {'buy'|'sell'} options.type - 订单类型
      * @param {number} options.price - 价格
      * @param {number} options.volume - 数量
      * @param {boolean} options.abortOnPriceWarning - 是否遇到价格警告时中止
      * @returns {Promise<{status: string, message?: string}>}
      */
     async function placeOrder({ type, price, volume, abortOnPriceWarning = false }) {
-      // 1. 切换到买/卖tab
-      const tabText = '买入';
-      const tab = await waitForElement(() => getTabByText(tabText));
-      if (!tab) throw new Error('未找到' + tabText + 'tab');
-      tab.click();
-      logit(`已点击${tabText}标签`);
-      await waitForElement(() => getActiveTabByText(tabText));
-      logit(`${tabText}标签已激活`);
-      // 2. 切换到限价
-      const limitTab = await waitForElement(SELECTORS.limitTab);
-      if (!limitTab) throw new Error('未找到限价tab');
-      limitTab.click();
-      logit('已点击限价标签');
-      // 3. 买入设置数量与价格，并启用反向订单
-      setLimitPrice(price);
-      setVolume(volume);
-      const reversePrice = calcReversePrice(price);
-      enableReverseOrder(reversePrice);
-      logit(`已设置限价${price}和数量${volume}（反向订单价: ${reversePrice}）`);
+      for (let attempt = 1; attempt <= 10; attempt++) {
+        try {
+          // 1. 切换到买/卖tab
+          const tabText = type === ORDER_TYPE.BUY ? '买入' : '卖出';
+          const tab = await waitForElement(() => getTabByText(tabText));
+          if (!tab) throw new Error('未找到' + tabText + 'tab');
+          tab.click();
+          logit(`已点击${tabText}标签（第${attempt}次尝试）`);
+          await waitForElement(() => getActiveTabByText(tabText));
+          logit(`${tabText}标签已激活`);
+          // 2. 切换到限价
+          const limitTab = await waitForElement(SELECTORS.limitTab);
+          if (!limitTab) throw new Error('未找到限价tab');
+          limitTab.click();
+          logit('已点击限价标签');
 
-      // 4. 点击买入按钮
-      const config = SELECTORS[ORDER_TYPE.BUY];
-      const actionButton = await waitForElement(config.button);
-      if (!actionButton) throw new Error('未找到' + config.logPrefix + '按钮');
-      actionButton.click();
-      logit(`已点击${config.logPrefix}按钮`);
-      // 7. 检查价格警告弹窗
-      try {
-        const confirmModal = await waitForElement(SELECTORS.confirmModal, null, null, 3, 500, 500);
-        if (confirmModal && confirmModal.textContent.includes('下单手滑提醒')) {
-          if (abortOnPriceWarning) {
-            logit('检测到下单手滑提醒,停止交易');
-            alert('检测到下单手滑提醒,已停止交易');
-            return {status: 'aborted', message: '下单手滑提醒，已中止'};
-          } else {
-            logit('检测到下单手滑提醒,继续交易');
-            const continueButton = await waitForElement(() => {
-              const dialog = document.querySelector('div[role="dialog"]');
-              if (!dialog) return null;
-              const buttons = dialog.querySelectorAll('button');
-              return Array.from(buttons).find(btn => btn.textContent.includes('继续'));
-            }, null, null, 5, 1000, 0);
-            if (continueButton && continueButton.textContent.includes('继续')) {
-              continueButton.click();
-              logit('已点击下单手滑提醒弹窗的继续按钮');
+          // 尝试>1时刷新建议价
+          let usePrice = price;
+          if (attempt > 1) {
+            try {
+              const fresh = await fetchSuggestPrice(type === ORDER_TYPE.BUY ? 'buy' : 'sell');
+              if (fresh) usePrice = fresh;
+            } catch (e) {
+              usePrice = price;
             }
           }
-        }
-      } catch (err) {
-        // 如果没有弹窗出现就继续执行
-      }
-      // 5. 检查手续费弹窗
-      try {
-        const feeModal = await waitForElement(
-          SELECTORS.feeModal,
-          null,
-          null,
-          5,
-          1000,
-          0
-        );
-        if (feeModal && feeModal.textContent.includes('预估手续费')) {
-          logit('检测到订单弹窗');
-          const confirmButton = await waitForElement(() => {
-            const dialog = document.querySelector('div[role="dialog"]');
-            if (!dialog) return null;
-            const buttons = dialog.querySelectorAll('button');
-            return Array.from(buttons).find(btn => btn.textContent.includes('确认'));
-          }, null, null, 5, 1000, 0);
-          if (confirmButton && confirmButton.textContent.includes('确认')) {
-            confirmButton.click();
-            logit('已点击弹窗确认按钮');
+
+          // 3. 卖出：先设置价格再拉满滑块（内部最多重试10次；最终再尝试点击100%按钮）
+          if (type === ORDER_TYPE.SELL) {
+            setLimitPrice(usePrice);
+            let slider = document.querySelector('input[role="slider"]');
+            if (slider) {
+              let sAttempt = 0;
+              while (sAttempt < 10) {
+                setInputValue(slider, 100);
+                await new Promise(r => setTimeout(r, 150));
+                if (slider.value !== '0') {
+                  break;
+                }
+                sAttempt++;
+                if (sAttempt < 10) {
+                  logit(`卖出滑块设置失败，重试第${sAttempt}次`);
+                  slider = document.querySelector('input[role="slider"]');
+                }
+              }
+              if (slider.value === '0') {
+                // 滑块失效兜底：尝试点击100%/最大
+                await clickSellMax();
+              }
+            }
+          } else {
+            // 4. 买入：设置价格与数量
+            setLimitPrice(usePrice);
+            setVolume(volume);
+          }
+          logit(`已设置限价${usePrice}` + (type === ORDER_TYPE.BUY ? `和数量${volume}` : '，全部可卖资产'));
+
+          // 5. 点击买/卖按钮
+          const config = SELECTORS[type];
+          const actionButton = await waitForElement(config.button);
+          if (!actionButton) throw new Error('未找到' + config.logPrefix + '按钮');
+          actionButton.click();
+          logit(`已点击${config.logPrefix}按钮`);
+
+          // 6. 价格警告弹窗
+          try {
+            const confirmModal = await waitForElement(SELECTORS.confirmModal, null, null, 3, 200, 200);
+            if (confirmModal && confirmModal.textContent.includes('下单手滑提醒')) {
+              if (abortOnPriceWarning) {
+                logit('检测到下单手滑提醒,停止交易');
+                alert('检测到下单手滑提醒,已停止交易');
+                return {status: 'aborted', message: '下单手滑提醒，已中止'};
+              } else {
+                logit('检测到下单手滑提醒,继续交易');
+                const continueButton = await waitForElement(() => {
+                  const dialog = document.querySelector('div[role="dialog"]');
+                  if (!dialog) return null;
+                  const buttons = dialog.querySelectorAll('button');
+                  return Array.from(buttons).find(btn => btn.textContent.includes('继续'));
+                }, null, null, 5, 100, 0);
+                if (continueButton && continueButton.textContent.includes('继续')) {
+                  continueButton.click();
+                  logit('已点击下单手滑提醒弹窗的继续按钮');
+                }
+              }
+            }
+          } catch (err) {
+            // 无弹窗则继续
+          }
+
+          // 7. 手续费弹窗
+          try {
+            const feeModal = await waitForElement(
+              SELECTORS.feeModal,
+              null,
+              null,
+              5,
+              100,
+              0
+            );
+            if (feeModal && feeModal.textContent.includes('预估手续费')) {
+              logit('检测到预估手续费弹窗');
+              const confirmButton = await waitForElement(() => {
+                const dialog = document.querySelector('div[role="dialog"]');
+                if (!dialog) return null;
+                const buttons = dialog.querySelectorAll('button');
+                return Array.from(buttons).find(btn => btn.textContent.includes('继续'));
+              }, null, null, 5, 100, 0);
+              if (confirmButton && confirmButton.textContent.includes('继续')) {
+                confirmButton.click();
+                logit('已点击预估手续费弹窗的继续按钮');
+              }
+            }
+          } catch (e) {
+            logit('未检测到预估手续费弹窗，继续...');
+          }
+
+          // 8. 等待订单成交
+          const orderResult = await checkOrderStatus();
+          logit('订单状态:', orderResult);
+          if (orderResult && orderResult.status === 'completed') {
+            return orderResult;
+          }
+          if (orderResult && orderResult.status === 'timeout') {
+            logit(`第${attempt}次下单超时，已取消进行中的订单`);
+            if (attempt < 10) {
+              continue; // 继续下一次尝试
+            } else {
+              return { status: 'timeout', message: '订单超时，已重试10次仍未成交' };
+            }
+          }
+          // 其他状态：直接返回
+          return orderResult || {status: 'unknown'};
+        } catch (err) {
+          logit('下单流程异常:', err);
+          if (attempt >= 10) {
+            return { status: 'error', message: '下单异常，重试10次失败: ' + (err && err.message ? err.message : err) };
           }
         }
-      } catch (e) {
-        logit('未检测到弹窗确认按钮，继续...');
       }
-      // 6. 等待订单成交
-      const orderResult = await checkOrderStatus();
-      logit('订单状态:', orderResult);
-      return orderResult || {status: 'unknown'};
+      // 不应到达
+      return { status: 'unknown' };
     }
 
     // buy/sell分别传入类型
@@ -677,7 +860,11 @@
         if (!price) throw new Error('未能获取买入建议价');
         return placeOrder({ type: ORDER_TYPE.BUY, price, volume, abortOnPriceWarning });
     }
-    // 已移除卖出函数，买入时由平台自动创建反向订单
+    async function sell(volume, abortOnPriceWarning = false) {
+        const price = await fetchSuggestPrice('sell');
+        if (!price) throw new Error('未能获取卖出建议价');
+        return placeOrder({ type: ORDER_TYPE.SELL, price, volume, abortOnPriceWarning });
+    }
 
     /**
      * 主交易循环，自动买入卖出刷交易量
@@ -699,13 +886,21 @@
           const buyResult = await buy(ORDER_VOLUME, ABORT_ON_PRICE_WARNING);
           logit('本次买入返回:', buyResult);
           if (buyResult && buyResult.status === 'completed') {
-            // 买入成功，由平台自动创建反向订单；直接递减剩余次数
-            REMAINING_TRADES = Math.max(0, (REMAINING_TRADES || 0) - 1);
-            saveParamsToStorage();
-            updateRemainingDisplay();
-            logit('买入成功，已自动创建反向订单（由平台）。剩余次数:', REMAINING_TRADES);
-            if (REMAINING_TRADES <= 0) {
-              logit('已完成全部循环次数');
+            logit('买入成功,开始卖出...');
+            const sellResult = await sell(ORDER_VOLUME, ABORT_ON_PRICE_WARNING);
+            logit('本次卖出返回:', sellResult);
+            if (sellResult && sellResult.status === 'completed') {
+              // 成功买入+卖出，递减剩余次数并持久化
+              REMAINING_TRADES = Math.max(0, (REMAINING_TRADES || 0) - 1);
+              saveParamsToStorage();
+              updateRemainingDisplay();
+              logit('卖出成功,剩余次数递减为:', REMAINING_TRADES);
+              if (REMAINING_TRADES <= 0) {
+                logit('已完成全部循环次数');
+                break;
+              }
+            } else {
+              logit('卖出失败,暂停交易，返回值:', sellResult);
               break;
             }
           } else {
@@ -714,7 +909,7 @@
             break;
           }
           // 每轮交易间隔1-5秒，防止被风控
-          await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 4000));
+          await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 0));
         } catch (err) {
           logit('交易出错:', err);
           alert(`交易出错: ${err.message}`);
