@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         wutong - 币安刷单助手
 // @namespace    https://x.com/wutongge_BTCC
-// @version      8.0
+// @version      8.1
 // @description  币安刷单助手
 // @author       @wutongge_BTCC
 // @match        https://www.binance.com/*/alpha/bsc/*
