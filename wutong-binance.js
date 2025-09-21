@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         wutong - 币安刷单助手 9.0
+// @name         wutong - 币安刷单助手 9.1
 // @namespace    https://x.com/wutongge_BTCC
-// @version      9.0
+// @version      9.1
 // @description  币安刷单助手
 // @author       @wutongge_BTCC
 // @match        https://www.binance.com/*/alpha/bsc/*
@@ -1415,8 +1415,9 @@
             const POINTS_OFFSET = 2; // 使 16400 -> 16 分, 32800 -> 17 分
             const currentPoints = basePts + POINTS_OFFSET;
             const nextPoints = currentPoints + 1;
-            const diff16400 = todayBuyTotal - 16400;
-            const diff32800 = todayBuyTotal - 32800;
+            // 按阈值计算“还差金额”（达标时为0）
+            const remain16400 = Math.max(0, 16400 - todayBuyTotal);
+            const remain32800 = Math.max(0, 32800 - todayBuyTotal);
             const unitInput = document.getElementById('cex-input-volume');
             const unit = unitInput ? parseFloat(unitInput.value) : 0;
             const formatCount = (amount) => {
@@ -1427,8 +1428,10 @@
             summaryHtml = `<div style=\"margin-top:6px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px dashed #e5e7eb;\">`
                  + `<b style=\"color:#111;\">当日汇总</b><br>`
                  + `今日已刷：<span style=\"color:#00bfae;font-weight:600;\">${todayBuyTotal.toFixed(2)} USDT</span> | <span style=\"color:#4f8cff;font-weight:600;\">${currentPoints} 积分</span> <br>`
-                + `16400档还差：<span style=\"color:#4f8cff;font-weight:600;\">${diff16400.toFixed(2)} USDT</span> | <span class=\"wutong-fill-rounds\" data-rounds=\"${formatCount(diff16400)}\" style=\"cursor:pointer;color:#111;text-decoration:underline;\">差 ${formatCount(diff16400)} 笔</span><br>`
-                + `32800档还差：<span style=\"color:#4f8cff;font-weight:600;\">${diff32800.toFixed(2)} USDT</span> | <span class=\"wutong-fill-rounds\" data-rounds=\"${formatCount(diff32800)}\" style=\"cursor:pointer;color:#111;text-decoration:underline;\">差 ${formatCount(diff32800)} 笔</span><br>`
+                 + `16400档还差：<span style=\"color:#4f8cff;font-weight:600;\">${remain16400.toFixed(2)} USDT</span>`
+                 + (remain16400 > 0 ? ` | <span class=\"wutong-fill-rounds\" data-rounds=\"${formatCount(remain16400)}\" style=\"cursor:pointer;color:#111;text-decoration:underline;\">差 ${formatCount(remain16400)} 笔</span>` : ` | <span style=\"color:#22c55e;font-weight:600;\">达标</span>`) + `<br>`
+                 + `32800档还差：<span style=\"color:#4f8cff;font-weight:600;\">${remain32800.toFixed(2)} USDT</span>`
+                 + (remain32800 > 0 ? ` | <span class=\"wutong-fill-rounds\" data-rounds=\"${formatCount(remain32800)}\" style=\"cursor:pointer;color:#111;text-decoration:underline;\">差 ${formatCount(remain32800)} 笔</span>` : ` | <span style=\"color:#22c55e;font-weight:600;\">达标</span>`) + `<br>`
                  + `距离下一档还差：<span style=\"color:#ff6b35;font-weight:600;\">${gap.toFixed(2)} USDT</span> | <span style=\"color:#4f8cff;font-weight:600;\"> ${nextPoints} 积分</span> `
                  + ` <span style=\"color:#888;font-size:12px;\">下一档阈值 ${nextThreshold.toFixed(2)} USDT</span>`
                  + `</div>`;
