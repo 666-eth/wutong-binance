@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         wutong - 币安刷单助手 9.6
+// @name         wutong - 币安刷单助手 9.7
 // @namespace    https://x.com/wutongge_BTCC
-// @version      9.6
+// @version      9.7
 // @description  币安刷单助手
 // @author       @wutongge_BTCC
 // @match        https://www.binance.com/*/alpha/*
@@ -34,7 +34,7 @@
         panel.innerHTML = `
         <div style="height:6px;width:100%;background:linear-gradient(90deg,#4f8cff,#00e0c6);border-radius:18px 18px 0 0;"></div>
         <div id="cex-alpha-panel-header" style="cursor:move;font-weight:bold;margin-bottom:16px;position:relative;letter-spacing:1px;font-size:1.18rem;padding:18px 28px 0 28px;color:#222;">
-            wutong - 币安刷单助手 9.6
+            wutong - 币安刷单助手 9.7
             <button id="cex-alpha-panel-close" style="position:absolute;right:18px;top:12px;width:32px;height:32px;border:none;background:#f5f6fa;border-radius:50%;font-size:20px;color:#888;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,color 0.2s;">×</button>
         </div>
         <div style="padding:0 28px;margin-bottom:12px;">
@@ -977,7 +977,8 @@
      * @returns {Promise<{status: string, message?: string}>}
      */
     async function placeOrder({ type, price, volume, abortOnPriceWarning = false }) {
-      for (let attempt = 1; attempt <= 10; attempt++) {
+      const MAX_ATTEMPTS = 50;
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         try {
           // 1. 切换到买/卖tab
           const tabText = type === ORDER_TYPE.BUY ? '买入' : '卖出';
@@ -1117,18 +1118,18 @@
           }
           if (orderResult && orderResult.status === 'timeout') {
             logit(`第${attempt}次下单超时，已取消进行中的订单`);
-            if (attempt < 10) {
+            if (attempt < MAX_ATTEMPTS) {
               continue; // 继续下一次尝试
             } else {
-              return { status: 'timeout', message: '订单超时，已重试10次仍未成交' };
+              return { status: 'timeout', message: `订单超时，已重试${MAX_ATTEMPTS}次仍未成交` };
             }
           }
           // 其他状态：直接返回
           return orderResult || {status: 'unknown'};
         } catch (err) {
           logit('下单流程异常:', err);
-          if (attempt >= 10) {
-            return { status: 'error', message: '下单异常，重试10次失败: ' + (err && err.message ? err.message : err) };
+          if (attempt >= MAX_ATTEMPTS) {
+            return { status: 'error', message: `下单异常，重试${MAX_ATTEMPTS}次失败: ` + (err && err.message ? err.message : err) };
           }
         }
       }
