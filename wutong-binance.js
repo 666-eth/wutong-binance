@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         wutong - 币安刷单助手 9.1
+// @name         wutong - 币安刷单助手 9.6
 // @namespace    https://x.com/wutongge_BTCC
-// @version      9.1
+// @version      9.6
 // @description  币安刷单助手
 // @author       @wutongge_BTCC
-// @match        https://www.binance.com/*/alpha/bsc/*
+// @match        https://www.binance.com/*/alpha/*
 // @grant        none
 // @updateURL    https://raw.githubusercontent.com/666-eth/wutong-binance/refs/heads/main/wutong-binance.js
 // @downloadURL  https://raw.githubusercontent.com/666-eth/wutong-binance/refs/heads/main/wutong-binance.js
@@ -34,7 +34,7 @@
         panel.innerHTML = `
         <div style="height:6px;width:100%;background:linear-gradient(90deg,#4f8cff,#00e0c6);border-radius:18px 18px 0 0;"></div>
         <div id="cex-alpha-panel-header" style="cursor:move;font-weight:bold;margin-bottom:16px;position:relative;letter-spacing:1px;font-size:1.18rem;padding:18px 28px 0 28px;color:#222;">
-            wutong - 币安刷单助手 9.1 
+            wutong - 币安刷单助手 9.6
             <button id="cex-alpha-panel-close" style="position:absolute;right:18px;top:12px;width:32px;height:32px;border:none;background:#f5f6fa;border-radius:50%;font-size:20px;color:#888;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,color 0.2s;">×</button>
         </div>
         <div style="padding:0 28px;margin-bottom:12px;">
@@ -64,13 +64,18 @@
             </label>
           </div>
         </div>
-        <div style="margin-bottom:12px;padding:0 24px;display:flex;gap:10px;">
+        <div style="margin-bottom:12px;padding:0 24px;display:flex;gap:10px;align-items:stretch;">
           <button id="cex-btn-start" style="flex:1;background:linear-gradient(90deg,#00C853,#00E5FF);color:#fff;padding:10px 18px;border:none;border-radius:12px;font-size:1.06em;font-weight:700;box-shadow:0 4px 14px rgba(0,200,83,0.25);cursor:pointer;">启动</button>
           <button id="cex-btn-stop" style="flex:1;background:linear-gradient(90deg,#FF3D00,#D50000);color:#fff;padding:10px 18px;border:none;border-radius:12px;font-size:1.06em;font-weight:700;box-shadow:0 4px 14px rgba(213,0,0,0.25);cursor:pointer;">停止</button>
           <button id="cex-btn-quick-sell" style="flex:1;background:linear-gradient(90deg,#FF6A00,#FF3D00);color:#fff;padding:10px 18px;border:none;border-radius:12px;font-size:1.06em;font-weight:700;box-shadow:0 4px 14px rgba(255,106,0,0.25);cursor:pointer;">快卖</button>
         </div>
-        <div style="margin-bottom:18px;padding:0 24px;display:flex;gap:10px;">
-          <button id="cex-btn-lock" style="flex:1;background:linear-gradient(90deg,#00B4DB,#0083B0);color:#fff;padding:10px 18px;border:none;border-radius:12px;font-size:1.02em;font-weight:700;box-shadow:0 2px 8px rgba(0,131,176,0.25);cursor:pointer;">锁一手价</button>
+        <div style="margin-bottom:18px;padding:0 24px;display:flex;gap:10px;align-items:stretch;">
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(90deg,#00B4DB,#0083B0);color:#fff;padding:10px 18px;border:none;border-radius:12px;font-size:1.02em;font-weight:700;box-shadow:0 2px 8px rgba(0,131,176,0.25);">
+            <span>锁一手价</span>
+            <label style="display:inline-flex;align-items:center;cursor:pointer;">
+              <input id="cex-toggle-lock" type="checkbox" style="appearance:none;width:44px;height:24px;background:#e5e7eb;border-radius:999px;position:relative;outline:none;transition:all .2s;">
+            </label>
+          </div>
           <button id="cex-btn-stat" style="flex:1;background:linear-gradient(90deg,#5C6BC0,#42A5F5);color:#fff;padding:10px 18px;border:none;border-radius:12px;font-size:1.02em;font-weight:700;box-shadow:0 2px 8px rgba(66,165,245,0.25);cursor:pointer;">统计</button>
           <button id="cex-btn-stat-history" style="flex:1;background:linear-gradient(90deg,#F9A825,#F57C00);color:#fff;padding:10px 18px;border:none;border-radius:12px;font-size:1.02em;font-weight:700;box-shadow:0 2px 8px rgba(245,124,0,0.25);cursor:pointer;">历史</button>
         </div>
@@ -78,6 +83,11 @@
         <style>
         #cex-alpha-panel button:hover { filter: brightness(1.05) saturate(1.05); }
         #cex-alpha-panel input:focus { border-color: #4f8cff!important; box-shadow:0 0 6px #4f8cff22 inset; }
+        /* toggle style */
+        #cex-toggle-lock { background:#ef4444 !important; }
+        #cex-toggle-lock:checked { background:#22c55e !important; }
+        #cex-toggle-lock::after { content:''; position:absolute; width:20px; height:20px; background:#fff; border-radius:999px; top:2px; left:2px; transition:left .2s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+        #cex-toggle-lock:checked::after { left:22px; }
         #cex-alpha-panel-close:hover { background:#4f8cff; color:#fff; }
         </style>
         `;
@@ -197,6 +207,9 @@
     const BACKUP_STORAGE_KEY = 'wutong_shuju2';
     const STAT_STORAGE_KEY = 'wutong_stat_result';
     let REMAINING_TRADES = null; // 持久化的剩余次数
+    let LOCK_ONE_HAND_ENABLED = false; // 是否锁定一手价
+    let lockPriceInterval = null; // 锁价定时器
+    let lockTabsBound = false; // 是否已绑定tab切换重启锁价
 
     function updateRemainingDisplay() {
         const el = document.getElementById('cex-remaining');
@@ -375,55 +388,56 @@
                 logit('已将剩余次数重置为循环次数:', REMAINING_TRADES);
             };
         }
-        // 锁定一手价按钮（完全按照你提供的实现）
-        const lockBtn = document.getElementById('cex-btn-lock');
+        // 锁定一手价：开关 + 自动刷新后保持
+        const toggleLock = document.getElementById('cex-toggle-lock');
         const quickSellBtn = document.getElementById('cex-btn-quick-sell');
-        if (lockBtn) {
-            let priceUpdateInterval = null;
-            function updatePrice() {
-                // 判断当前是否是买入窗口（按你的选择器）
-                const buyTab = document.querySelector('#bn-tab-0');
-                const isBuyTabActive = buyTab && buyTab.classList && buyTab.classList.contains('active');
-                // 如果有正在运行的 interval 需要清除
-                if (priceUpdateInterval) {
-                    clearInterval(priceUpdateInterval);
+        function stopLockPrice() {
+            if (lockPriceInterval) { clearInterval(lockPriceInterval); lockPriceInterval = null; }
+        }
+        function startLockPrice() {
+            stopLockPrice();
+            const buyTab = document.querySelector('#bn-tab-0');
+            const isBuyTabActive = buyTab && buyTab.classList && buyTab.classList.contains('active');
+            lockPriceInterval = setInterval(() => {
+                let priceValue = '';
+                let finalPrice = 0;
+                if (isBuyTabActive) {
+                    const priceElement = document.querySelector('div.flex-1.cursor-pointer[style*="--color-Buy"]');
+                    priceValue = priceElement ? priceElement.textContent.trim() : '';
+                    if (priceValue) finalPrice = parseFloat(priceValue) * 1.00001;
+                } else {
+                    const priceElement = document.querySelector('div.flex-1.cursor-pointer[style*="--color-Sell"]');
+                    priceValue = priceElement ? priceElement.textContent.trim() : '';
+                    if (priceValue) finalPrice = parseFloat(priceValue) * 0.9999;
                 }
-                // 设置新的 interval 更新价格
-                priceUpdateInterval = setInterval(() => {
-                    let priceValue = '';
-                    let finalPrice = 0;
-                    if (isBuyTabActive) {
-                        // 如果是买入窗口，选择“卖出”价格（按你的选择器）
-                        const priceElement = document.querySelector('div.flex-1.cursor-pointer[style*="--color-Buy"]');
-                        priceValue = priceElement ? priceElement.textContent.trim() : '';
-                        if (priceValue) {
-                            finalPrice = parseFloat(priceValue) * 1.00001;  // 买入价格乘以 1.00001
-                        }
-                    } else {
-                        // 如果是卖出窗口，选择“买入”价格（按你的选择器）
-                        const priceElement = document.querySelector('div.flex-1.cursor-pointer[style*="--color-Sell"]');
-                        priceValue = priceElement ? priceElement.textContent.trim() : '';
-                        if (priceValue) {
-                            finalPrice = parseFloat(priceValue) * 0.9999;  // 卖出价格乘以 0.9999
-                        }
-                    }
-                    // 更新到输入框
-                    const limitPriceInput = document.querySelector('#limitPrice');
-                    if (limitPriceInput && finalPrice) {
-                        setInputValue(limitPriceInput, Number(finalPrice).toFixed(8));
-                    }
-                }, 100); // 每100ms更新一次
-            }
-            lockBtn.onclick = function() {
-                updatePrice();
-                // 监听 tab 切换事件，动态重新调用 updatePrice（按你的实现）
+                const limitPriceInput = document.querySelector('#limitPrice');
+                if (limitPriceInput && finalPrice) {
+                    setInputValue(limitPriceInput, Number(finalPrice).toFixed(8));
+                }
+            }, 150);
+            if (!lockTabsBound) {
                 document.querySelectorAll('.bn-tab').forEach(tab => {
                     tab.addEventListener('click', () => {
-                        updatePrice();
+                        if (LOCK_ONE_HAND_ENABLED) startLockPrice();
                     });
                 });
-                logit('锁定一手价已启动');
-            };
+                lockTabsBound = true;
+            }
+            logit('锁定一手价已启动');
+        }
+        if (toggleLock) {
+            // 初始化开关状态
+            try { LOCK_ONE_HAND_ENABLED = localStorage.getItem('wutong_lock_one_hand') === '1'; } catch (e) { LOCK_ONE_HAND_ENABLED = false; }
+            toggleLock.checked = LOCK_ONE_HAND_ENABLED;
+            // 设置初始颜色
+            toggleLock.style.background = LOCK_ONE_HAND_ENABLED ? '#22c55e' : '#ef4444';
+            if (LOCK_ONE_HAND_ENABLED) startLockPrice();
+            toggleLock.addEventListener('change', () => {
+                LOCK_ONE_HAND_ENABLED = !!toggleLock.checked;
+                try { localStorage.setItem('wutong_lock_one_hand', LOCK_ONE_HAND_ENABLED ? '1' : '0'); } catch (e) {}
+                toggleLock.style.background = LOCK_ONE_HAND_ENABLED ? '#22c55e' : '#ef4444';
+                if (LOCK_ONE_HAND_ENABLED) { startLockPrice(); logit('锁定一手价已开启'); } else { stopLockPrice(); logit('锁定一手价已关闭'); }
+            });
         }
         // 快卖按钮：执行统一的“快卖”函数
         if (quickSellBtn) {
@@ -632,15 +646,39 @@
                     logit('刷新后自动恢复触发');
                     // 等待面板绑定与参数加载
                     setTimeout(() => { resumeAfterInsufficient(); }, 800);
-                    // 刷新后自动执行锁一手价
-                    setTimeout(() => { triggerLockOneHandPrice(); }, 900);
+            // 刷新后根据开关状态决定是否锁一手价
+            setTimeout(() => {
+                try {
+                    const enabled = localStorage.getItem('wutong_lock_one_hand') === '1';
+                    if (enabled) {
+                        const toggle = document.getElementById('cex-toggle-lock');
+                        if (toggle) { toggle.checked = true; }
+                        if (typeof startLockPrice === 'function') startLockPrice();
+                        logit('刷新后保持锁一手价开启');
+                    } else {
+                        logit('刷新后保持建议价模式');
+                    }
+                } catch (e) {}
+            }, 900);
                 }
                 const flag2 = localStorage.getItem(RESUME_CONTINUE_KEY);
                 if (flag2 === '1') {
                     localStorage.removeItem(RESUME_CONTINUE_KEY);
                     logit('刷新后自动继续触发');
                     setTimeout(() => { resumeContinueOnly(); }, 800);
-                    setTimeout(() => { triggerLockOneHandPrice(); }, 900);
+            setTimeout(() => {
+                try {
+                    const enabled = localStorage.getItem('wutong_lock_one_hand') === '1';
+                    if (enabled) {
+                        const toggle = document.getElementById('cex-toggle-lock');
+                        if (toggle) { toggle.checked = true; }
+                        if (typeof startLockPrice === 'function') startLockPrice();
+                        logit('刷新后保持锁一手价开启');
+                    } else {
+                        logit('刷新后保持建议价模式');
+                    }
+                } catch (e) {}
+            }, 900);
                 }
             } catch (e) {}
         } catch (e) {
@@ -1389,16 +1427,17 @@
         try {
             function getTodayKeyByBeijing8() {
                 const now = new Date();
-                const bjNow = new Date(now.getTime() + (8 * 60 - now.getTimezoneOffset()) * 60000);
-                let y = bjNow.getFullYear();
-                let m = bjNow.getMonth() + 1;
-                let d = bjNow.getDate();
-                let h = bjNow.getHours();
+                // 转为UTC毫秒，再加8小时，使用UTC取出即为北京时间字段
+                const bj = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 8 * 3600000);
+                let y = bj.getUTCFullYear();
+                let m = bj.getUTCMonth() + 1;
+                let d = bj.getUTCDate();
+                let h = bj.getUTCHours();
                 if (h < 8) {
-                    const prev = new Date(bjNow.getTime() - 24 * 3600000);
-                    y = prev.getFullYear();
-                    m = prev.getMonth() + 1;
-                    d = prev.getDate();
+                    bj.setUTCDate(bj.getUTCDate() - 1);
+                    y = bj.getUTCFullYear();
+                    m = bj.getUTCMonth() + 1;
+                    d = bj.getUTCDate();
                 }
                 return `${m}-${d}日`;
             }
