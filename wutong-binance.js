@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         wutong - 币安刷单助手
+// @name         wutong - 币安刷单助手 9.0
 // @namespace    https://x.com/wutongge_BTCC
-// @version      8.1
+// @version      9.0
 // @description  币安刷单助手
 // @author       @wutongge_BTCC
 // @match        https://www.binance.com/*/alpha/bsc/*
@@ -34,41 +34,49 @@
         panel.innerHTML = `
         <div style="height:6px;width:100%;background:linear-gradient(90deg,#4f8cff,#00e0c6);border-radius:18px 18px 0 0;"></div>
         <div id="cex-alpha-panel-header" style="cursor:move;font-weight:bold;margin-bottom:16px;position:relative;letter-spacing:1px;font-size:1.18rem;padding:18px 28px 0 28px;color:#222;">
-            wutong - 币安刷单助手 8.0 
+            wutong - 币安刷单助手 9.0 
             <button id="cex-alpha-panel-close" style="position:absolute;right:18px;top:12px;width:32px;height:32px;border:none;background:#f5f6fa;border-radius:50%;font-size:20px;color:#888;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,color 0.2s;">×</button>
         </div>
-        <div style="margin-bottom:14px;padding:0 28px;">
-           <span style="color:#4f8cff;font-weight:bold;"><span id="cex-suggest-price" style="color:#00bfae;font-weight:bold;font-size:1.1em;"></span></span>
+        <div style="padding:0 28px;margin-bottom:12px;">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <div style="display:flex;align-items:center;gap:8px;background:#f5f9ff;border:1px solid #e3edff;color:#185adb;border-radius:10px;padding:6px 10px;">
+              <span style="font-weight:600;">建议价</span>
+              <span id="cex-suggest-price" style="color:#00bfae;font-weight:bold;font-size:1.1em;">--</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;background:#fff7f0;border:1px solid #ffe2cc;color:#a64b2a;border-radius:10px;padding:6px 10px;">
+              <span style="font-weight:600;">剩余次数</span>
+              <span id="cex-remaining" style="color:#ff6b35;font-weight:bold;font-size:1.1em;">--</span>
+            </div>
+            <button id="cex-btn-reset-remaining" title="将剩余次数设置为当前循环次数" style="background:#f5f6fa;color:#444;padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;font-size:0.92em;font-weight:600;cursor:pointer;">重置</button>
+            <button id="cex-btn-save" style="background:linear-gradient(90deg,#00BFAE,#22C55E);color:#fff;padding:6px 14px;border:none;border-radius:10px;font-size:0.98em;font-weight:700;box-shadow:0 2px 8px rgba(0,191,174,0.2);cursor:pointer;">保存参数</button>
+          </div>
         </div>
-        <div style="margin-bottom:14px;padding:0 28px;">
-            <span style="color:#4f8cff;font-weight:bold;">剩余次数: <span id="cex-remaining" style="color:#ff6b35;font-weight:bold;font-size:1.1em;">--</span></span>
+        <div style="padding:0 28px;margin-bottom:8px;">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+            <label style="color:#333;font-weight:500;">USDT: 
+              <input id="cex-input-volume" type="number" step="1" style="width:120px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;color:#222;padding:5px 10px;outline:none;font-size:1em;transition:border-color 0.2s;">
+            </label>
+            <label style="color:#333;font-weight:500;">循环次数: 
+              <input id="cex-input-rounds" type="number" step="1" style="width:90px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;color:#222;padding:5px 10px;outline:none;font-size:1em;transition:border-color 0.2s;">
+            </label>
+            <label style="color:#333;font-weight:500;">超时(秒): 
+              <input id="cex-input-timeout" type="number" step="1" style="width:90px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;color:#222;padding:5px 10px;outline:none;font-size:1em;transition:border-color 0.2s;">
+            </label>
+          </div>
         </div>
-        <div style="margin-bottom:12px;padding:0 28px;">
-            <label style="color:#333;font-weight:500;">USDT: <input id="cex-input-volume" type="number" step="1" style="width:100px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;color:#222;padding:5px 10px;outline:none;font-size:1em;transition:border-color 0.2s;"></label>
+        <div style="margin-bottom:12px;padding:0 24px;display:flex;gap:10px;">
+          <button id="cex-btn-start" style="flex:1;background:linear-gradient(90deg,#00C853,#00E5FF);color:#fff;padding:10px 18px;border:none;border-radius:12px;font-size:1.06em;font-weight:700;box-shadow:0 4px 14px rgba(0,200,83,0.25);cursor:pointer;">启动</button>
+          <button id="cex-btn-stop" style="flex:1;background:linear-gradient(90deg,#FF3D00,#D50000);color:#fff;padding:10px 18px;border:none;border-radius:12px;font-size:1.06em;font-weight:700;box-shadow:0 4px 14px rgba(213,0,0,0.25);cursor:pointer;">停止</button>
+          <button id="cex-btn-quick-sell" style="flex:1;background:linear-gradient(90deg,#FF6A00,#FF3D00);color:#fff;padding:10px 18px;border:none;border-radius:12px;font-size:1.06em;font-weight:700;box-shadow:0 4px 14px rgba(255,106,0,0.25);cursor:pointer;">快卖</button>
         </div>
-        <div style="margin-bottom:12px;padding:0 28px;">
-            <label style="color:#333;font-weight:500;">循环次数: <input id="cex-input-rounds" type="number" step="1" style="width:70px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;color:#222;padding:5px 10px;outline:none;font-size:1em;transition:border-color 0.2s;"></label>
+        <div style="margin-bottom:18px;padding:0 24px;display:flex;gap:10px;">
+          <button id="cex-btn-lock" style="flex:1;background:linear-gradient(90deg,#00B4DB,#0083B0);color:#fff;padding:10px 18px;border:none;border-radius:12px;font-size:1.02em;font-weight:700;box-shadow:0 2px 8px rgba(0,131,176,0.25);cursor:pointer;">锁一手价</button>
+          <button id="cex-btn-stat" style="flex:1;background:linear-gradient(90deg,#5C6BC0,#42A5F5);color:#fff;padding:10px 18px;border:none;border-radius:12px;font-size:1.02em;font-weight:700;box-shadow:0 2px 8px rgba(66,165,245,0.25);cursor:pointer;">统计</button>
+          <button id="cex-btn-stat-history" style="flex:1;background:linear-gradient(90deg,#F9A825,#F57C00);color:#fff;padding:10px 18px;border:none;border-radius:12px;font-size:1.02em;font-weight:700;box-shadow:0 2px 8px rgba(245,124,0,0.25);cursor:pointer;">历史</button>
         </div>
-        <div style="margin-bottom:12px;padding:0 28px;">
-            <label style="color:#333;font-weight:500;">超时(秒): <input id="cex-input-timeout" type="number" step="1" style="width:70px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;color:#222;padding:5px 10px;outline:none;font-size:1em;transition:border-color 0.2s;"></label>
-        </div>
-        <div style="margin-bottom:12px;padding:0 28px;">
-            <label style="color:#333;font-weight:500;"><input id="cex-input-abort" type="checkbox" style="accent-color:#4f8cff;">遇警告中止</label>
-        </div>
-        <div style="margin-bottom:18px;padding:0 28px;">
-            <button id="cex-btn-start" style="background:linear-gradient(90deg,#4f8cff,#00e0c6);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.08em;font-weight:bold;box-shadow:0 2px 10px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;">启动</button>
-            <button id="cex-btn-stop" style="background:linear-gradient(90deg,#00e0c6,#4f8cff);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.08em;font-weight:bold;box-shadow:0 2px 10px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;margin-left:18px;">停止</button>
-            <button id="cex-btn-stat" style="background:linear-gradient(90deg,#ffb347,#4f8cff);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.08em;font-weight:bold;box-shadow:0 2px 10px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;margin-left:18px;">统计</button>
-
-        </div>
-        <div style="margin-bottom:18px;padding:0 28px;">
-          <button id="cex-btn-save" style="background:linear-gradient(90deg,#4f8cff,#ff6b35);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.02em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;">保存参数</button>
-          <button id="cex-btn-lock" style="background:linear-gradient(90deg,#4f8cff,#2EBD85);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.02em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;margin-left:4px;">锁一手价</button>
-          <button id="cex-btn-quick-sell" style="background:linear-gradient(90deg,#F6465D,#F6465D);color:#fff;padding:7px 32px;border:none;border-radius:10px;font-size:1.02em;font-weight:bold;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;margin-left:4px;">快卖</button>
-        </div>
-        <div id="cex-alpha-panel-log" style="font-size:13px;color:#222;background:#f5f6fa;border-radius:8px;max-height:100px;overflow:auto;padding:8px 12px;margin:0 28px;box-shadow:0 0 8px #e0e0e0 inset;"></div>
+        <div id="cex-alpha-panel-log" style="font-size:13px;color:#222;background:#f5f6fa;border-radius:8px;height:120px;overflow:auto;padding:8px 12px;margin:0 28px;box-shadow:0 0 8px #e0e0e0 inset;"></div>
         <style>
-        #cex-alpha-panel button:hover { filter: brightness(1.1) saturate(1.2); background:linear-gradient(90deg,#00e0c6,#4f8cff)!important; }
+        #cex-alpha-panel button:hover { filter: brightness(1.05) saturate(1.05); }
         #cex-alpha-panel input:focus { border-color: #4f8cff!important; box-shadow:0 0 6px #4f8cff22 inset; }
         #cex-alpha-panel-close:hover { background:#4f8cff; color:#fff; }
         </style>
@@ -89,12 +97,22 @@
             offsetX = e.clientX - panel.getBoundingClientRect().left;
             offsetY = e.clientY - panel.getBoundingClientRect().top;
             document.body.style.userSelect = 'none';
+            e.preventDefault();
         });
         document.addEventListener('mousemove', function(e) {
             if (isDragging) {
-                panel.style.left = (e.clientX - offsetX + panel.offsetWidth/2) + 'px';
-                panel.style.top = (e.clientY - offsetY + panel.offsetHeight/2) + 'px';
+                panel.style.left = (e.clientX - offsetX) + 'px';
+                panel.style.top = (e.clientY - offsetY) + 'px';
                 panel.style.transform = '';
+                // 同步历史统计面板位置（若用户未手动拖动过统计面板）
+                try {
+                    const statDiv = document.getElementById('wutong-stat-result');
+                    if (statDiv && !window.__wutong_stat_user_moved) {
+                        const rect = panel.getBoundingClientRect();
+                        statDiv.style.left = (rect.right + 10) + 'px';
+                        statDiv.style.top = rect.top + 'px';
+                    }
+                } catch (e2) {}
             }
         });
         document.addEventListener('mouseup', function() {
@@ -170,13 +188,14 @@
 
     let ORDER_VOLUME = 255;
     let MAX_TRADES = 65;
-    let ORDER_TIMEOUT_MS = 5000; // 固定为200秒
+    let ORDER_TIMEOUT_MS = 5000; // 单位: 毫秒（默认5秒）
     let ABORT_ON_PRICE_WARNING = false;
     let stopTrading = true;
 
     // 本地存储
     const STORAGE_KEY = 'wutong_shuju';
     const BACKUP_STORAGE_KEY = 'wutong_shuju2';
+    const STAT_STORAGE_KEY = 'wutong_stat_result';
     let REMAINING_TRADES = null; // 持久化的剩余次数
 
     function updateRemainingDisplay() {
@@ -255,7 +274,7 @@
             const abortEl = document.getElementById('cex-input-abort');
             if (volEl) volEl.value = ORDER_VOLUME;
             if (roundsEl) roundsEl.value = MAX_TRADES;
-            if (timeoutEl) timeoutEl.value = Math.floor(ORDER_TIMEOUT_MS/1000);
+            if (timeoutEl) timeoutEl.value = Math.floor(ORDER_TIMEOUT_MS);
             if (abortEl) abortEl.checked = ABORT_ON_PRICE_WARNING;
             updateRemainingDisplay();
             logit('已从备份重置参数并刷新剩余次数');
@@ -285,15 +304,15 @@
         loadParamsFromStorage();
         document.getElementById('cex-input-volume').value = ORDER_VOLUME;
         document.getElementById('cex-input-rounds').value = MAX_TRADES;
-        document.getElementById('cex-input-timeout').value = Math.floor(ORDER_TIMEOUT_MS/200);
-        document.getElementById('cex-input-abort').checked = ABORT_ON_PRICE_WARNING;
+        document.getElementById('cex-input-timeout').value = Math.floor(ORDER_TIMEOUT_MS/1000);
+        (function(){ const el = document.getElementById('cex-input-abort'); if (el) el.checked = ABORT_ON_PRICE_WARNING; })();
         updateRemainingDisplay();
 
         document.getElementById('cex-btn-start').onclick = function() {
             ORDER_VOLUME = parseFloat(document.getElementById('cex-input-volume').value);
             MAX_TRADES = parseInt(document.getElementById('cex-input-rounds').value);
-            ORDER_TIMEOUT_MS = parseInt(document.getElementById('cex-input-timeout').value) * 200;
-            ABORT_ON_PRICE_WARNING = document.getElementById('cex-input-abort').checked;
+            ORDER_TIMEOUT_MS = parseInt(document.getElementById('cex-input-timeout').value) * 1000;
+            (function(){ const el = document.getElementById('cex-input-abort'); ABORT_ON_PRICE_WARNING = el ? el.checked : false; })();
             // 启动时决定是否继续未完成的剩余次数
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
@@ -325,20 +344,35 @@
         document.getElementById('cex-btn-stat').onclick = function() {
             runStat();
         };
+        const histBtn = document.getElementById('cex-btn-stat-history');
+        if (histBtn) {
+            histBtn.onclick = function() {
+                showSavedStat();
+            };
+        }
         const saveBtn = document.getElementById('cex-btn-save');
         if (saveBtn) {
             saveBtn.onclick = function() {
                 ORDER_VOLUME = parseFloat(document.getElementById('cex-input-volume').value);
                 MAX_TRADES = parseInt(document.getElementById('cex-input-rounds').value);
                 ORDER_TIMEOUT_MS = parseInt(document.getElementById('cex-input-timeout').value) * 1000;
-                ABORT_ON_PRICE_WARNING = document.getElementById('cex-input-abort').checked;
-                // 保存主参数，并初始化剩余次数为当前循环次数
-                REMAINING_TRADES = MAX_TRADES;
+                (function(){ const el = document.getElementById('cex-input-abort'); ABORT_ON_PRICE_WARNING = el ? el.checked : false; })();
+                // 仅保存参数，不重置剩余次数，避免统计被覆盖
                 saveParamsToStorage();
                 // 另外保存一份备份参数
                 saveBackupParamsToStorage();
                 updateRemainingDisplay();
-                alert('参数已保存，并创建备份');
+            };
+        }
+        const resetRemainBtn = document.getElementById('cex-btn-reset-remaining');
+        if (resetRemainBtn) {
+            resetRemainBtn.onclick = function() {
+                MAX_TRADES = parseInt(document.getElementById('cex-input-rounds').value);
+                if (!isFinite(MAX_TRADES) || MAX_TRADES <= 0) return;
+                REMAINING_TRADES = MAX_TRADES;
+                saveParamsToStorage();
+                updateRemainingDisplay();
+                logit('已将剩余次数重置为循环次数:', REMAINING_TRADES);
             };
         }
         // 锁定一手价按钮（完全按照你提供的实现）
@@ -388,47 +422,242 @@
                         updatePrice();
                     });
                 });
-                logit('锁定一手价已启动（使用你的算法与选择器）');
+                logit('锁定一手价已启动');
             };
         }
-        // 快卖按钮：执行你提供的“卖出页面”脚本逻辑
+        // 快卖按钮：执行统一的“快卖”函数
         if (quickSellBtn) {
             quickSellBtn.onclick = async function() {
-                async function clickSellTab() {
-                    const activeTab = document.querySelector('.bn-tab.bn-tab__buySell[aria-selected="true"]');
-                    if (activeTab && activeTab.textContent.trim() === '卖出') {
-                        return true;
+                await performQuickSell();
+            };
+        }
+    }
+
+    // 复用“快卖”逻辑为函数，供按钮和自动触发调用
+    async function performQuickSell() {
+        try {
+            async function handleQuickSellModals() {
+                // 下单手滑提醒
+                try {
+                    const confirmModal = await waitForElement(SELECTORS.confirmModal, null, null, 3, 200, 100);
+                    if (confirmModal && confirmModal.textContent.includes('下单手滑提醒')) {
+                        const continueButton = await waitForElement(() => {
+                            const dialog = document.querySelector('div[role="dialog"]') || document.querySelector(SELECTORS.confirmModal);
+                            if (!dialog) return null;
+                            const buttons = dialog.querySelectorAll('button');
+                            return Array.from(buttons).find(btn => btn.textContent.includes('继续'));
+                        }, null, null, 5, 120, 0);
+                        if (continueButton) {
+                            continueButton.click();
+                            logit('快卖：已点击下单手滑提醒继续');
+                        }
                     }
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                    const tabs = Array.from(document.querySelectorAll('.bn-tab.bn-tab__buySell'));
-                    const sellTab = tabs.find(el => el.textContent.trim() === '卖出');
-                    if (!sellTab) return false;
-                    sellTab.click();
-                    await new Promise(resolve => setTimeout(resolve, 200));
+                } catch (e) {}
+                // 预估手续费
+                try {
+                    const feeModal = await waitForElement(SELECTORS.feeModal, null, null, 3, 200, 0);
+                    if (feeModal && feeModal.textContent.includes('预估手续费')) {
+                        const confirmButton = await waitForElement(() => {
+                            const dialog = document.querySelector('div[role="dialog"]') || document.querySelector(SELECTORS.feeModal);
+                            if (!dialog) return null;
+                            const buttons = dialog.querySelectorAll('button');
+                            return Array.from(buttons).find(btn => btn.textContent.includes('继续'));
+                        }, null, null, 5, 120, 0);
+                        if (confirmButton) {
+                            confirmButton.click();
+                            logit('快卖：已点击预估手续费继续');
+                        }
+                    }
+                } catch (e) {}
+            }
+            async function clickSellTab() {
+                const activeTab = document.querySelector('.bn-tab.bn-tab__buySell[aria-selected="true"]');
+                if (activeTab && activeTab.textContent.trim() === '卖出') {
                     return true;
                 }
-                function setSliderMax() {
-                    const getSlider = () => {
-                        const list = Array.from(document.querySelectorAll('input[role="slider"]'));
-                        return list.find(el => el.offsetParent !== null) || list[0] || null;
-                    };
-                    const slider = getSlider();
-                    if (!slider) return;
-                    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
-                    setter.call(slider, '100');
-                    slider.dispatchEvent(new Event('input', { bubbles: true }));
-                    slider.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-                const ok = await clickSellTab();
-                if (!ok) { logit('快卖：未找到卖出tab'); return; }
-                setSliderMax();
-                let sellBtn = document.querySelector('button.bn-button__sell');
-                if (sellBtn) { sellBtn.click(); }
-                await new Promise(resolve => setTimeout(resolve, 300));
-                let btn2 = document.evaluate('//*[@id="__APP"]/div[3]/div/div/button', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-                if (btn2) btn2.click();
-                logit('已执行快卖');
+                await new Promise(resolve => setTimeout(resolve, 200));
+                const tabs = Array.from(document.querySelectorAll('.bn-tab.bn-tab__buySell'));
+                const sellTab = tabs.find(el => el.textContent.trim() === '卖出');
+                if (!sellTab) return false;
+                sellTab.click();
+                await new Promise(resolve => setTimeout(resolve, 200));
+                return true;
+            }
+            function setSliderMax() {
+                const getSlider = () => {
+                    const list = Array.from(document.querySelectorAll('input[role="slider"]'));
+                    return list.find(el => el.offsetParent !== null) || list[0] || null;
+                };
+                const slider = getSlider();
+                if (!slider) return;
+                const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+                setter.call(slider, '100');
+                slider.dispatchEvent(new Event('input', { bubbles: true }));
+                slider.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            const ok = await clickSellTab();
+            if (!ok) { logit('快卖：未找到卖出tab'); return; }
+            setSliderMax();
+            let sellBtn = document.querySelector('button.bn-button__sell');
+            if (sellBtn) { sellBtn.click(); }
+            await new Promise(resolve => setTimeout(resolve, 300));
+            await handleQuickSellModals();
+            let btn2 = document.evaluate('//*[@id="__APP"]/div[3]/div/div/button', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+            if (btn2) btn2.click();
+            await handleQuickSellModals();
+            logit('已执行快卖');
+        } catch (e) {
+            logit('快卖执行异常:', e);
+        }
+    }
+
+    // 检查买入面板是否出现“余额不足”提示
+    function hasInsufficientBalanceBanner() {
+        try {
+            // 优先精准匹配错误提示样式
+            const errNodes = Array.from(document.querySelectorAll('.text-Error, .text-Error *'));
+            if (errNodes.some(el => el && typeof el.textContent === 'string' && el.textContent.trim().includes('余额不足'))) {
+                return true;
+            }
+            // 兜底：附近含“添加USDT余额”按钮也视为余额不足区域
+            const addBtns = Array.from(document.querySelectorAll('button.bn-button__primary'));
+            if (addBtns.some(btn => btn && typeof btn.textContent === 'string' && btn.textContent.trim().includes('添加USDT余额'))) {
+                return true;
+            }
+            // 最后再全局模糊匹配一次
+            const candidates = Array.from(document.querySelectorAll('div, span, p'));
+            return candidates.some(el => el && typeof el.textContent === 'string' && el.textContent.trim().includes('余额不足'));
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // 检测余额不足后，刷新并恢复为：先尝试卖出，再继续自动循环
+    async function resumeAfterInsufficient() {
+        try {
+            // 先尝试卖出一轮（按限价逻辑），以释放资金
+            try {
+                logit('不足自动恢复：尝试先卖出以恢复余额');
+                const sellResult = await sell(ORDER_VOLUME, ABORT_ON_PRICE_WARNING);
+                logit('不足自动恢复：卖出返回', sellResult);
+            } catch (e) {
+                logit('不足自动恢复：卖出异常', e);
+            }
+            // 然后继续正常自动循环（不重置剩余次数）
+            stopTrading = false;
+            logit('不足自动恢复：继续自动买卖循环');
+            startTrading();
+        } catch (e) {
+            console.warn('resumeAfterInsufficient error:', e);
+        }
+    }
+
+    // 仅继续循环（不再尝试额外卖出）
+    async function resumeContinueOnly() {
+        try {
+            stopTrading = false;
+            logit('刷新后：继续自动买卖循环');
+            startTrading();
+        } catch (e) {
+            console.warn('resumeContinueOnly error:', e);
+        }
+    }
+
+    // 监听下单接口返回，若余额不足则刷新并在刷新后自动卖出
+    function setupOrderPlaceMonitor() {
+        try {
+            const RESUME_KEY = 'wutong_auto_resume_after_reload';
+            const RESUME_CONTINUE_KEY = 'wutong_auto_resume_continue_only';
+            const markAndReload = () => {
+                try { localStorage.setItem(RESUME_KEY, '1'); } catch (e) {}
+                setTimeout(() => location.reload(), 200);
             };
+            // fetch 代理
+            if (window.fetch && !window.__wutong_fetch_patched) {
+                const originalFetch = window.fetch.bind(window);
+                window.fetch = async function() {
+                    const args = arguments;
+                    let url = '';
+                    try {
+                        url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) ? args[0].url : '';
+                    } catch (e) { url = ''; }
+                    const res = await originalFetch.apply(window, args);
+                    try {
+                        if (url.includes('/bapi/asset/v1/private/alpha-trade/order/place')) {
+                            const clone = res.clone();
+                            const data = await clone.json().catch(() => null);
+                            if (data && (data.code === '481020' || (data.message && data.message.includes('余额不足')))) {
+                                logit('检测到余额不足，下单失败，准备刷新并自动恢复循环');
+                                markAndReload();
+                            }
+                        }
+                    } catch (e) {}
+                    return res;
+                };
+                window.__wutong_fetch_patched = true;
+            }
+            // XHR 代理
+            if (window.XMLHttpRequest && !window.__wutong_xhr_patched) {
+                const origOpen = XMLHttpRequest.prototype.open;
+                const origSend = XMLHttpRequest.prototype.send;
+                XMLHttpRequest.prototype.open = function(method, url) {
+                    try { this.__wutong_url = url || ''; } catch (e) { this.__wutong_url = ''; }
+                    return origOpen.apply(this, arguments);
+                };
+                XMLHttpRequest.prototype.send = function(body) {
+                    try {
+                        this.addEventListener('load', function() {
+                            try {
+                                const url = this.__wutong_url || this.responseURL || '';
+                                if (url.includes('/bapi/asset/v1/private/alpha-trade/order/place')) {
+                                    let data = null;
+                                    try { data = JSON.parse(this.responseText); } catch (e) { data = null; }
+                                    if (data && (data.code === '481020' || (data.message && data.message.includes('余额不足')))) {
+                                        logit('检测到余额不足(XHR)，准备刷新并自动恢复循环');
+                                        markAndReload();
+                                    }
+                                }
+                            } catch (e) {}
+                        });
+                    } catch (e) {}
+                    return origSend.apply(this, arguments);
+                };
+                window.__wutong_xhr_patched = true;
+            }
+            // 刷新后自动恢复循环
+            try {
+                const flag = localStorage.getItem(RESUME_KEY);
+                if (flag === '1') {
+                    localStorage.removeItem(RESUME_KEY);
+                    logit('刷新后自动恢复触发');
+                    // 等待面板绑定与参数加载
+                    setTimeout(() => { resumeAfterInsufficient(); }, 800);
+                    // 刷新后自动执行锁一手价
+                    setTimeout(() => { triggerLockOneHandPrice(); }, 900);
+                }
+                const flag2 = localStorage.getItem(RESUME_CONTINUE_KEY);
+                if (flag2 === '1') {
+                    localStorage.removeItem(RESUME_CONTINUE_KEY);
+                    logit('刷新后自动继续触发');
+                    setTimeout(() => { resumeContinueOnly(); }, 800);
+                    setTimeout(() => { triggerLockOneHandPrice(); }, 900);
+                }
+            } catch (e) {}
+        } catch (e) {
+            console.warn('setupOrderPlaceMonitor error:', e);
+        }
+    }
+
+    // 刷新后自动点击“锁一手价”按钮
+    function triggerLockOneHandPrice() {
+        try {
+            const btn = document.getElementById('cex-btn-lock');
+            if (btn) {
+                btn.click();
+                logit('刷新后已自动启动锁一手价');
+            }
+        } catch (e) {
+            console.warn('triggerLockOneHandPrice error:', e);
         }
     }
 
@@ -764,6 +993,21 @@
             // 4. 买入：设置价格与数量
             setLimitPrice(usePrice);
             setVolume(volume);
+            // 填充成交额后检查是否出现“余额不足”提示
+            await new Promise(r => setTimeout(r, 150));
+            if (hasInsufficientBalanceBanner()) {
+              logit('买入填充后检测到余额不足，执行正常卖出全部并刷新继续');
+              try {
+                const sellResult = await sell(ORDER_VOLUME, ABORT_ON_PRICE_WARNING);
+                logit('余额不足预处理：卖出返回', sellResult);
+              } catch (e) {
+                logit('余额不足预处理：卖出异常', e);
+              }
+              // 标记刷新后仅继续，不重复卖出
+              try { localStorage.setItem('wutong_auto_resume_continue_only', '1'); } catch (e) {}
+              setTimeout(() => location.reload(), 800);
+              return { status: 'aborted', message: 'insufficient-balance-detected-after-fill' };
+            }
           }
           logit(`已设置限价${usePrice}` + (type === ORDER_TYPE.BUY ? `和数量${volume}` : '，全部可卖资产'));
 
@@ -871,7 +1115,21 @@
      */
     async function startTrading() {
       if (typeof REMAINING_TRADES !== 'number' || isNaN(REMAINING_TRADES)) {
-        REMAINING_TRADES = MAX_TRADES;
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const data = JSON.parse(raw);
+            if (typeof data.remainingTrades === 'number' && !isNaN(data.remainingTrades)) {
+              REMAINING_TRADES = data.remainingTrades; // 包含0在内
+            } else {
+              REMAINING_TRADES = MAX_TRADES;
+            }
+          } else {
+            REMAINING_TRADES = MAX_TRADES;
+          }
+        } catch (e) {
+          REMAINING_TRADES = MAX_TRADES;
+        }
         saveParamsToStorage();
       }
       updateRemainingDisplay();
@@ -905,7 +1163,7 @@
             }
           } else {
             logit('买入失败,暂停交易，返回值:', buyResult);
-            alert('买入失败,已停止交易');
+ 
             break;
           }
           // 每轮交易间隔1-5秒，防止被风控
@@ -926,7 +1184,6 @@
 
     // ====== 历史委托统计功能（融合自lixi.js） ======
     async function runStat() {
-        alert('开始统计所有历史委托数据，过程自动翻页，请勿手动操作分页！');
         // 1. 切换到“历史委托”tab
         const hisTab = Array.from(document.getElementsByClassName('text-[14px]')).find(el => el.classList.contains('font-[500]') && el.textContent.includes('历史委托'));
         if (hisTab) { hisTab.click(); logit('点击历史委托tab'); }
@@ -939,6 +1196,7 @@
         const oneDayTab = Array.from(document.querySelectorAll('.bn-flex')).find(el => el.textContent.includes('1天'));
         if (oneDayTab) { oneDayTab.click(); logit('点击1天tab'); }
         await sleep(1000);
+        
         // 4. 获取总页数
         let pageBtns = Array.from(document.querySelectorAll('.bn-pagination-item'));
         let totalPages = 1;
@@ -1025,7 +1283,51 @@
                 }
             }
         }
+        saveStat(tokenStat);
+        // 保存后跳转到历史委托第一页
+        await clickHistoryFirstPage();
         showStatResultByTokenDate(tokenStat);
+    }
+    function saveStat(tokenStat) {
+        try {
+            localStorage.setItem(STAT_STORAGE_KEY, JSON.stringify({
+                ts: Date.now(),
+                data: tokenStat
+            }));
+            logit('统计结果已保存');
+        } catch (e) {
+            console.warn('保存统计失败:', e);
+        }
+    }
+    function loadStat() {
+        try {
+            const raw = localStorage.getItem(STAT_STORAGE_KEY);
+            if (!raw) return null;
+            const obj = JSON.parse(raw);
+            return obj && obj.data ? obj.data : null;
+        } catch (e) {
+            return null;
+        }
+    }
+    function showSavedStat() {
+        const data = loadStat();
+        if (!data) {
+            alert('没有已保存的统计结果');
+            return;
+        }
+        showStatResultByTokenDate(data);
+    }
+    async function clickHistoryFirstPage() {
+        try {
+            const hisTab = Array.from(document.getElementsByClassName('text-[14px]')).find(el => el.classList.contains('font-[500]') && el.textContent.includes('历史委托'));
+            if (hisTab) { hisTab.click(); logit('点击历史委托tab'); }
+            await sleep(500);
+            const page1 = Array.from(document.querySelectorAll('.bn-pagination-item'))
+                .find(a => a && typeof a.textContent === 'string' && a.textContent.trim() === '1');
+            if (page1) { page1.click(); logit('点击历史委托第一页'); }
+        } catch (e) {
+            logit('点击历史委托第一页出错:', e);
+        }
     }
     function showStatResultByTokenDate(tokenStat) {
         let statDiv = document.getElementById('wutong-stat-result');
@@ -1068,6 +1370,8 @@
                 offsetXStat = e.clientX - statDiv.getBoundingClientRect().left;
                 offsetYStat = e.clientY - statDiv.getBoundingClientRect().top;
                 document.body.style.userSelect = 'none';
+                window.__wutong_stat_user_moved = true;
+                e.preventDefault();
             });
             document.addEventListener('mousemove', function(e) {
                 if (isDraggingStat) {
@@ -1080,8 +1384,56 @@
                 document.body.style.userSelect = '';
             });
         }
-        // 内容填充到内容区
-        let html = '';
+        // 内容填充到内容区（先计算“今日汇总/下一档”，置顶显示）
+        let summaryHtml = '';
+        try {
+            function getTodayKeyByBeijing8() {
+                const now = new Date();
+                const bjNow = new Date(now.getTime() + (8 * 60 - now.getTimezoneOffset()) * 60000);
+                let y = bjNow.getFullYear();
+                let m = bjNow.getMonth() + 1;
+                let d = bjNow.getDate();
+                let h = bjNow.getHours();
+                if (h < 8) {
+                    const prev = new Date(bjNow.getTime() - 24 * 3600000);
+                    y = prev.getFullYear();
+                    m = prev.getMonth() + 1;
+                    d = prev.getDate();
+                }
+                return `${m}-${d}日`;
+            }
+            const todayKey = getTodayKeyByBeijing8();
+            let todayBuyTotal = 0;
+            for (const token in tokenStat) {
+                if (tokenStat[token] && tokenStat[token][todayKey]) {
+                    todayBuyTotal += tokenStat[token][todayKey].buyTotal || 0;
+                }
+            }
+            const nextThreshold = todayBuyTotal < 2 ? 2 : Math.pow(2, Math.floor(Math.log2(Math.max(2, todayBuyTotal))) + 1);
+            const gap = Math.max(0, nextThreshold - todayBuyTotal);
+            const basePts = todayBuyTotal >= 2 ? Math.floor(Math.log2(todayBuyTotal)) : 0;
+            const POINTS_OFFSET = 2; // 使 16400 -> 16 分, 32800 -> 17 分
+            const currentPoints = basePts + POINTS_OFFSET;
+            const nextPoints = currentPoints + 1;
+            const diff16400 = todayBuyTotal - 16400;
+            const diff32800 = todayBuyTotal - 32800;
+            const unitInput = document.getElementById('cex-input-volume');
+            const unit = unitInput ? parseFloat(unitInput.value) : 0;
+            const formatCount = (amount) => {
+                if (!unit || !isFinite(unit) || unit <= 0) return '-';
+                const n = Math.abs(amount) / unit;
+                return isFinite(n) ? Math.ceil(n) : '-';
+            };
+            summaryHtml = `<div style=\"margin-top:6px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px dashed #e5e7eb;\">`
+                 + `<b style=\"color:#111;\">当日汇总</b><br>`
+                 + `今日已刷：<span style=\"color:#00bfae;font-weight:600;\">${todayBuyTotal.toFixed(2)} USDT</span> | <span style=\"color:#4f8cff;font-weight:600;\">${currentPoints} 积分</span> <br>`
+                + `16400档还差：<span style=\"color:#4f8cff;font-weight:600;\">${diff16400.toFixed(2)} USDT</span> | <span class=\"wutong-fill-rounds\" data-rounds=\"${formatCount(diff16400)}\" style=\"cursor:pointer;color:#111;text-decoration:underline;\">差 ${formatCount(diff16400)} 笔</span><br>`
+                + `32800档还差：<span style=\"color:#4f8cff;font-weight:600;\">${diff32800.toFixed(2)} USDT</span> | <span class=\"wutong-fill-rounds\" data-rounds=\"${formatCount(diff32800)}\" style=\"cursor:pointer;color:#111;text-decoration:underline;\">差 ${formatCount(diff32800)} 笔</span><br>`
+                 + `距离下一档还差：<span style=\"color:#ff6b35;font-weight:600;\">${gap.toFixed(2)} USDT</span> | <span style=\"color:#4f8cff;font-weight:600;\"> ${nextPoints} 积分</span> `
+                 + ` <span style=\"color:#888;font-size:12px;\">下一档阈值 ${nextThreshold.toFixed(2)} USDT</span>`
+                 + `</div>`;
+        } catch (e) {}
+        let html = summaryHtml;
         for (const token in tokenStat) {
             html += `<div style=\"margin-top:10px;\"><b style=\"color:#4f8cff;\">${token}</b><br>`;
             for (const date in tokenStat[token]) {
@@ -1097,6 +1449,23 @@
             html += `</div>`;
         }
         statDiv.querySelector('#wutong-stat-content').innerHTML = html;
+        try {
+            if (!statDiv.__bindFillRounds) {
+                statDiv.addEventListener('click', function(e) {
+                    const target = e.target.closest('.wutong-fill-rounds');
+                    if (!target) return;
+                    const raw = (target.getAttribute('data-rounds') || '').trim();
+                    const n = parseInt(raw, 10);
+                    if (!isFinite(n) || n <= 0) return;
+                    const roundsEl = document.getElementById('cex-input-rounds');
+                    if (roundsEl) {
+                        setInputValue(roundsEl, n);
+                        logit('已填充循环次数为', n);
+                    }
+                });
+                statDiv.__bindFillRounds = true;
+            }
+        } catch (e) {}
         statDiv.querySelector('#wutong-stat-close').onclick = () => statDiv.remove();
     }
     function sleep(ms) {
@@ -1105,6 +1474,7 @@
 
     // === 启动自动交易 ===
     createDraggablePanel();
+    setupOrderPlaceMonitor();
     setTimeout(bindPanelEvents, 500);
 
 })();
