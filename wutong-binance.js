@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         @wutongge_BTCC - 币安Alpha助手 10.5
+// @name         @wutongge_BTCC - 币安Alpha助手 11.0
 // @namespace    https://x.com/wutongge_BTCC
-// @version      10.5
+// @version      11.0
 // @description  币安Alpha助手
 // @author       @wutongge_BTCC
 // @match        https://www.binance.com/*/alpha/*
@@ -30,11 +30,16 @@
       panel.style.minWidth = '340px';
       panel.style.fontFamily = 'system-ui,Segoe UI,Arial,sans-serif';
       panel.style.overflow = 'hidden';
+      // 记录初始位置，供浮窗恢复/定位使用
+      try {
+          panel.dataset.initTop = panel.style.top || '230px';
+          panel.dataset.initLeft = panel.style.left || '20px';
+      } catch (e) {}
 
       panel.innerHTML = `
       <div style="height:6px;width:100%;background:linear-gradient(90deg,#4f8cff,#00e0c6);border-radius:18px 18px 0 0;"></div>
       <div id="cex-alpha-panel-header" style="cursor:move;font-weight:bold;margin-bottom:16px;position:relative;letter-spacing:1px;font-size:1.18rem;padding:18px 28px 0 28px;color:#222;">
-          @wutongge_BTCC - 币安Alpha助手 10.5
+          @wutongge_BTCC - 币安Alpha助手 11.0
           <button id="cex-alpha-panel-close" style="position:absolute;right:18px;top:12px;width:32px;height:32px;border:none;background:#f5f6fa;border-radius:50%;font-size:20px;color:#888;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,color 0.2s;">×</button>
       </div>
       <div style="padding:0 28px;margin-bottom:12px;">
@@ -57,13 +62,13 @@
       </div>
       <div style="padding:0 28px;margin-bottom:8px;">
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-          <label style="color:#333;font-weight:500;">USDT: 
+          <label style="color:#333;font-weight:500;">USDT:
             <input id="cex-input-volume" type="number" step="1" style="width:120px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;color:#222;padding:5px 10px;outline:none;font-size:1em;transition:border-color 0.2s;">
           </label>
-          <label style="color:#333;font-weight:500;">循环次数: 
+          <label style="color:#333;font-weight:500;">循环次数:
             <input id="cex-input-rounds" type="number" step="1" style="width:90px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;color:#222;padding:5px 10px;outline:none;font-size:1em;transition:border-color 0.2s;">
           </label>
-          <label style="color:#333;font-weight:500;">超时(秒): 
+          <label style="color:#333;font-weight:500;">超时(秒):
             <input id="cex-input-timeout" type="number" step="1" style="width:90px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;color:#222;padding:5px 10px;outline:none;font-size:1em;transition:border-color 0.2s;">
           </label>
         </div>
@@ -97,9 +102,89 @@
       `;
       document.body.appendChild(panel);
 
-      // 关闭按钮
+      // 关闭按钮 → 隐藏面板并显示可恢复的浮窗图标
       panel.querySelector('#cex-alpha-panel-close').onclick = function() {
-          panel.remove();
+          try {
+              panel.style.display = 'none';
+              let fab = document.getElementById('cex-alpha-fab');
+              if (!fab) {
+                  fab = document.createElement('div');
+                  fab.id = 'cex-alpha-fab';
+                  fab.style.position = 'fixed';
+                  // 初始定位在面板的初始化位置
+                  const initLeft = (panel.dataset && panel.dataset.initLeft) ? panel.dataset.initLeft : (panel.style.left || '20px');
+                  const initTop = (panel.dataset && panel.dataset.initTop) ? panel.dataset.initTop : (panel.style.top || '230px');
+                  fab.style.left = initLeft;
+                  fab.style.top = initTop;
+                  fab.style.right = '';
+                  fab.style.bottom = '';
+                  fab.style.width = '48px';
+                  fab.style.height = '48px';
+                  fab.style.borderRadius = '50%';
+                  fab.style.background = 'linear-gradient(135deg,#4f8cff,#00e0c6)';
+                  fab.style.boxShadow = '0 6px 18px rgba(0,0,0,0.15)';
+                  fab.style.display = 'flex';
+                  fab.style.alignItems = 'center';
+                  fab.style.justifyContent = 'center';
+                  fab.style.color = '#fff';
+                  fab.style.fontWeight = '700';
+                  fab.style.fontSize = '20px';
+                  fab.style.cursor = 'pointer';
+                  fab.style.zIndex = 100000;
+                  fab.title = 'wutong币安Alpha助手';
+                  fab.textContent = 'WT';
+                  fab.addEventListener('mouseenter', () => { fab.style.filter = 'brightness(1.1)'; });
+                  fab.addEventListener('mouseleave', () => { fab.style.filter = ''; });
+                  // 拖动能力
+                  (function(){
+                      let isDraggingFab = false, offsetXF = 0, offsetYF = 0, moved = false;
+                      function onMouseMove(e){
+                          if (!isDraggingFab) return;
+                          moved = true;
+                          fab.style.left = (e.clientX - offsetXF) + 'px';
+                          fab.style.top = (e.clientY - offsetYF) + 'px';
+                          fab.style.right = '';
+                          fab.style.bottom = '';
+                      }
+                      function onMouseUp(){
+                          isDraggingFab = false;
+                          document.removeEventListener('mousemove', onMouseMove);
+                          document.removeEventListener('mouseup', onMouseUp);
+                          document.body.style.userSelect = '';
+                      }
+                      fab.addEventListener('mousedown', function(e){
+                          // 仅左键拖动
+                          if (e.button !== 0) return;
+                          const rect = fab.getBoundingClientRect();
+                          isDraggingFab = true; moved = false;
+                          offsetXF = e.clientX - rect.left;
+                          offsetYF = e.clientY - rect.top;
+                          document.body.style.userSelect = 'none';
+                          document.addEventListener('mousemove', onMouseMove);
+                          document.addEventListener('mouseup', onMouseUp);
+                          e.preventDefault();
+                      });
+                      fab.addEventListener('click', function(){
+                          if (moved) { moved = false; return; }
+                          panel.style.display = '';
+                          try { fab.remove(); } catch (e) { fab.style.display = 'none'; }
+                      });
+                  })();
+                  // 点击恢复
+                  document.body.appendChild(fab);
+              } else {
+                  fab.style.display = '';
+                  // 重置到初始化位置
+                  const initLeft2 = (panel.dataset && panel.dataset.initLeft) ? panel.dataset.initLeft : (panel.style.left || '20px');
+                  const initTop2 = (panel.dataset && panel.dataset.initTop) ? panel.dataset.initTop : (panel.style.top || '230px');
+                  fab.style.left = initLeft2;
+                  fab.style.top = initTop2;
+                  fab.style.right = '';
+                  fab.style.bottom = '';
+              }
+          } catch (e) {
+              try { panel.remove(); } catch (e2) {}
+          }
       };
 
       // 拖动实现
@@ -474,18 +559,12 @@
                   const activeTab = document.querySelector('.bn-tab.bn-tab__buySell[aria-selected="true"]');
                   activeIsBuy = !!(activeTab && activeTab.textContent && activeTab.textContent.trim() === '买入');
               } catch (e) { activeIsBuy = false; }
-              // 优先从“锁价来源”文本读取（与面板显示一致）
+              // 直接从订单簿实时读取，避免锁价来源1秒刷新延迟
               let basePrice = null;
-              try {
-                  const lockEl = document.getElementById('cex-lock-source');
-                  if (lockEl) basePrice = parseNumericText(lockEl.textContent);
-              } catch (e) { basePrice = null; }
-              if (!basePrice) {
-                  if (activeIsBuy) {
-                      basePrice = getBestAskPriceStrict() || getBestAskPrice();
-                  } else {
-                      basePrice = getBestBidPriceStrict() || getBestBidPrice();
-                  }
+              if (activeIsBuy) {
+                  basePrice = getBestAskPriceStrict() || getBestAskPrice();
+              } else {
+                  basePrice = getBestBidPriceStrict() || getBestBidPrice();
               }
               if (activeIsBuy) {
                   // 买入：卖一 × 1.0001
@@ -496,9 +575,9 @@
               }
               const limitPriceInput = document.querySelector('#limitPrice');
               if (limitPriceInput && finalPrice) {
-                  setInputValue(limitPriceInput, Number(finalPrice).toFixed(8));
+                  setInputValueQuick(limitPriceInput, Number(finalPrice).toFixed(8));
               }
-          }, 150);
+          }, 0);
           if (!lockTabsBound) {
               document.querySelectorAll('.bn-tab').forEach(tab => {
                   tab.addEventListener('click', () => {
@@ -906,6 +985,20 @@
     inputElement.dispatchEvent(new Event("input", { bubbles: true }));
     inputElement.dispatchEvent(new Event("change", { bubbles: true }));
     inputElement.blur();
+  }
+
+  // 轻量快速赋值：仅在变更时更新，不触发 focus/blur，减少抖动
+  function setInputValueQuick(inputElement, value) {
+    try {
+      if (!inputElement) return;
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+      const targetStr = typeof value === 'number' ? String(value) : String(value || '');
+      const currentNum = parseFloat(String(inputElement.value).replace(/[$,\s]/g, ''));
+      const targetNum = parseFloat(String(targetStr).replace(/[$,\s]/g, ''));
+      if (isFinite(currentNum) && isFinite(targetNum) && Math.abs(currentNum - targetNum) < 1e-10) return;
+      setter.call(inputElement, targetStr);
+      inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+    } catch (e) {}
   }
 
   // 锁价状态与当前限价读取
@@ -1453,7 +1546,7 @@
       const oneDayTab = Array.from(document.querySelectorAll('.bn-flex')).find(el => el.textContent.includes('1天'));
       if (oneDayTab) { oneDayTab.click(); logit('点击1天tab'); }
       await sleep(1000);
-      
+
       // 4. 获取总页数
       let pageBtns = Array.from(document.querySelectorAll('.bn-pagination-item'));
       let totalPages = 1;
