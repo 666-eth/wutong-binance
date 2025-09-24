@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         wutong - 币安刷单助手 10.1
+// @name         @wutongge_BTCC - 币安Alpha助手 10.2
 // @namespace    https://x.com/wutongge_BTCC
-// @version      10.1
-// @description  币安刷单助手
+// @version      10.2
+// @description  币安Alpha助手
 // @author       @wutongge_BTCC
 // @match        https://www.binance.com/*/alpha/*
 // @grant        none
@@ -34,7 +34,7 @@
       panel.innerHTML = `
       <div style="height:6px;width:100%;background:linear-gradient(90deg,#4f8cff,#00e0c6);border-radius:18px 18px 0 0;"></div>
       <div id="cex-alpha-panel-header" style="cursor:move;font-weight:bold;margin-bottom:16px;position:relative;letter-spacing:1px;font-size:1.18rem;padding:18px 28px 0 28px;color:#222;">
-          wutong - 币安刷单助手 10.1
+          @wutongge_BTCC - 币安Alpha助手 10.2
           <button id="cex-alpha-panel-close" style="position:absolute;right:18px;top:12px;width:32px;height:32px;border:none;background:#f5f6fa;border-radius:50%;font-size:20px;color:#888;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,color 0.2s;">×</button>
       </div>
       <div style="padding:0 28px;margin-bottom:12px;">
@@ -900,6 +900,46 @@
     inputElement.blur();
   }
 
+  // 锁价状态与当前限价读取
+  function isLockEnabled() {
+    try {
+      const stored = localStorage.getItem('wutong_lock_one_hand') === '1';
+      return !!(LOCK_ONE_HAND_ENABLED || stored);
+    } catch (e) {
+      return !!LOCK_ONE_HAND_ENABLED;
+    }
+  }
+
+  function getLimitPriceFromInput() {
+    try {
+      const input = document.querySelector('#limitPrice');
+      if (!input) return null;
+      const v = parseFloat(String(input.value).replace(/[$,\s]/g, ''));
+      return isFinite(v) ? v : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function waitForLimitPriceValue(maxAttempts = 40, interval = 150) {
+    // 确保在限价tab上等待
+    try {
+      const limitTab = document.querySelector(SELECTORS.limitTab);
+      if (limitTab) limitTab.click();
+    } catch (e) {}
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        const input = document.querySelector('#limitPrice');
+        if (input) {
+          const v = parseFloat(String(input.value).replace(/[$,\s]/g, ''));
+          if (isFinite(v) && v > 0) return v;
+        }
+      } catch (e) {}
+      await new Promise(r => setTimeout(r, interval));
+    }
+    return null;
+  }
+
   /**
    * 设置买入/卖出数量（仅买入时用）
    * @param {number} amount
@@ -1078,7 +1118,7 @@
 
         // 尝试>1时刷新建议价
         let usePrice = price;
-        if (attempt > 1) {
+        if (attempt > 1 && !isLockEnabled()) {
           try {
             const fresh = await fetchSuggestPrice(type === ORDER_TYPE.BUY ? 'buy' : 'sell');
             if (fresh) usePrice = fresh;
@@ -1221,11 +1261,21 @@
 
   // buy/sell分别传入类型
   async function buy(volume, abortOnPriceWarning = false) {
+      if (isLockEnabled()) {
+        const inputPrice = await waitForLimitPriceValue(60, 150); // 最长约9秒
+        if (!inputPrice) throw new Error('锁价开启但限价价格未就绪');
+        return placeOrder({ type: ORDER_TYPE.BUY, price: inputPrice, volume, abortOnPriceWarning });
+      }
       const price = await fetchSuggestPrice('buy');
       if (!price) throw new Error('未能获取买入建议价');
       return placeOrder({ type: ORDER_TYPE.BUY, price, volume, abortOnPriceWarning });
   }
   async function sell(volume, abortOnPriceWarning = false) {
+      if (isLockEnabled()) {
+        const inputPrice = await waitForLimitPriceValue(60, 150); // 最长约9秒
+        if (!inputPrice) throw new Error('锁价开启但限价价格未就绪');
+        return placeOrder({ type: ORDER_TYPE.SELL, price: inputPrice, volume, abortOnPriceWarning });
+      }
       const price = await fetchSuggestPrice('sell');
       if (!price) throw new Error('未能获取卖出建议价');
       return placeOrder({ type: ORDER_TYPE.SELL, price, volume, abortOnPriceWarning });
