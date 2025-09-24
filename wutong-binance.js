@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         @wutongge_BTCC - 币安Alpha助手 10.2
+// @name         @wutongge_BTCC - 币安Alpha助手 10.3
 // @namespace    https://x.com/wutongge_BTCC
-// @version      10.2
+// @version      10.3
 // @description  币安Alpha助手
 // @author       @wutongge_BTCC
 // @match        https://www.binance.com/*/alpha/*
@@ -34,7 +34,7 @@
       panel.innerHTML = `
       <div style="height:6px;width:100%;background:linear-gradient(90deg,#4f8cff,#00e0c6);border-radius:18px 18px 0 0;"></div>
       <div id="cex-alpha-panel-header" style="cursor:move;font-weight:bold;margin-bottom:16px;position:relative;letter-spacing:1px;font-size:1.18rem;padding:18px 28px 0 28px;color:#222;">
-          @wutongge_BTCC - 币安Alpha助手 10.2
+          @wutongge_BTCC - 币安Alpha助手 10.3
           <button id="cex-alpha-panel-close" style="position:absolute;right:18px;top:12px;width:32px;height:32px;border:none;background:#f5f6fa;border-radius:50%;font-size:20px;color:#888;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,color 0.2s;">×</button>
       </div>
       <div style="padding:0 28px;margin-bottom:12px;">
@@ -479,12 +479,12 @@
                   const priceElement = document.querySelector('div.flex-1.cursor-pointer[style*="--color-Buy"]');
                   priceValue = priceElement ? priceElement.textContent.trim() : '';
                   // 买入用“买一”略降价
-                  if (priceValue) finalPrice = parseFloat(priceValue) * 0.99999;
+                  if (priceValue) finalPrice = parseFloat(priceValue) * 1.00001;
               } else {
                   const priceElement = document.querySelector('div.flex-1.cursor-pointer[style*="--color-Sell"]');
                   priceValue = priceElement ? priceElement.textContent.trim() : '';
                   // 卖出用“卖一”略抬价
-                  if (priceValue) finalPrice = parseFloat(priceValue) * 1.00001;
+                  if (priceValue) finalPrice = parseFloat(priceValue) * 0.99999;
               }
               const limitPriceInput = document.querySelector('#limitPrice');
               if (limitPriceInput && finalPrice) {
