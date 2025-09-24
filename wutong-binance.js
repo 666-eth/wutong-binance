@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         @wutongge_BTCC - 币安Alpha助手 10.3
+// @name         @wutongge_BTCC - 币安Alpha助手 10.5
 // @namespace    https://x.com/wutongge_BTCC
-// @version      10.3
+// @version      10.5
 // @description  币安Alpha助手
 // @author       @wutongge_BTCC
 // @match        https://www.binance.com/*/alpha/*
@@ -34,7 +34,7 @@
       panel.innerHTML = `
       <div style="height:6px;width:100%;background:linear-gradient(90deg,#4f8cff,#00e0c6);border-radius:18px 18px 0 0;"></div>
       <div id="cex-alpha-panel-header" style="cursor:move;font-weight:bold;margin-bottom:16px;position:relative;letter-spacing:1px;font-size:1.18rem;padding:18px 28px 0 28px;color:#222;">
-          @wutongge_BTCC - 币安Alpha助手 10.3
+          @wutongge_BTCC - 币安Alpha助手 10.5
           <button id="cex-alpha-panel-close" style="position:absolute;right:18px;top:12px;width:32px;height:32px;border:none;background:#f5f6fa;border-radius:50%;font-size:20px;color:#888;box-shadow:0 2px 8px #e0e0e0;cursor:pointer;transition:background 0.2s,color 0.2s;">×</button>
       </div>
       <div style="padding:0 28px;margin-bottom:12px;">
@@ -467,7 +467,6 @@
       function startLockPrice() {
           stopLockPrice();
           lockPriceInterval = setInterval(() => {
-              let priceValue = '';
               let finalPrice = 0;
               // 每次tick动态判断当前买/卖tab
               let activeIsBuy = false;
@@ -475,16 +474,25 @@
                   const activeTab = document.querySelector('.bn-tab.bn-tab__buySell[aria-selected="true"]');
                   activeIsBuy = !!(activeTab && activeTab.textContent && activeTab.textContent.trim() === '买入');
               } catch (e) { activeIsBuy = false; }
+              // 优先从“锁价来源”文本读取（与面板显示一致）
+              let basePrice = null;
+              try {
+                  const lockEl = document.getElementById('cex-lock-source');
+                  if (lockEl) basePrice = parseNumericText(lockEl.textContent);
+              } catch (e) { basePrice = null; }
+              if (!basePrice) {
+                  if (activeIsBuy) {
+                      basePrice = getBestAskPriceStrict() || getBestAskPrice();
+                  } else {
+                      basePrice = getBestBidPriceStrict() || getBestBidPrice();
+                  }
+              }
               if (activeIsBuy) {
-                  const priceElement = document.querySelector('div.flex-1.cursor-pointer[style*="--color-Buy"]');
-                  priceValue = priceElement ? priceElement.textContent.trim() : '';
-                  // 买入用“买一”略降价
-                  if (priceValue) finalPrice = parseFloat(priceValue) * 1.00001;
+                  // 买入：卖一 × 1.0001
+                  if (basePrice && isFinite(basePrice)) finalPrice = basePrice * 1.0001;
               } else {
-                  const priceElement = document.querySelector('div.flex-1.cursor-pointer[style*="--color-Sell"]');
-                  priceValue = priceElement ? priceElement.textContent.trim() : '';
-                  // 卖出用“卖一”略抬价
-                  if (priceValue) finalPrice = parseFloat(priceValue) * 0.99999;
+                  // 卖出：买一 × 0.9999
+                  if (basePrice && isFinite(basePrice)) finalPrice = basePrice * 0.9999;
               }
               const limitPriceInput = document.querySelector('#limitPrice');
               if (limitPriceInput && finalPrice) {
@@ -937,6 +945,84 @@
       } catch (e) {}
       await new Promise(r => setTimeout(r, interval));
     }
+    return null;
+  }
+
+  // ====== 订单簿价格提取（买一/卖一）======
+  function parseNumericText(text) {
+    try {
+      if (!text) return null;
+      const str = String(text).replace(/[$,\s]/g, '');
+      const match = str.match(/[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/);
+      if (!match) return null;
+      const v = parseFloat(match[0]);
+      return isFinite(v) ? v : null;
+    } catch (e) { return null; }
+  }
+  function getVisibleNumberEls(selector) {
+    try {
+      return Array.from(document.querySelectorAll(selector))
+        .filter(el => el && el.offsetParent !== null)
+        .map(el => ({ el, value: parseNumericText(el.textContent) }))
+        .filter(x => typeof x.value === 'number' && isFinite(x.value));
+    } catch (e) { return []; }
+  }
+  function getBestBidPrice() { // 买一：买盘最高价
+    const items = getVisibleNumberEls('div[style*="--color-Buy"], span[style*="--color-Buy"], td[style*="--color-Buy"]');
+    if (!items.length) return null;
+    return items.reduce((acc, x) => Math.max(acc, x.value), -Infinity);
+  }
+  function getBestAskPrice() { // 卖一：卖盘最低价
+    const items = getVisibleNumberEls('div[style*="--color-Sell"], span[style*="--color-Sell"], td[style*="--color-Sell"]');
+    if (!items.length) return null;
+    return items.reduce((acc, x) => Math.min(acc, x.value), Infinity);
+  }
+
+  // 更精确：优先读取下单区可点击的买一/卖一价格 chips
+  function getBestBidPriceStrict() {
+    try {
+      const nodes = Array.from(document.querySelectorAll('div.flex-1.cursor-pointer[style*="--color-Buy"]'))
+        .filter(el => el && el.offsetParent !== null);
+      for (const el of nodes) {
+        const v = parseNumericText(el.textContent);
+        if (isFinite(v) && v > 0) return v;
+      }
+    } catch (e) {}
+    return null;
+  }
+  function getBestAskPriceStrict() {
+    try {
+      const nodes = Array.from(document.querySelectorAll('div.flex-1.cursor-pointer[style*="--color-Sell"]'))
+        .filter(el => el && el.offsetParent !== null);
+      for (const el of nodes) {
+        const v = parseNumericText(el.textContent);
+        if (isFinite(v) && v > 0) return v;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  // 更精确：优先读取下单区可点击的买一/卖一价格 chips
+  function getBestBidPriceStrict() {
+    try {
+      const nodes = Array.from(document.querySelectorAll('div.flex-1.cursor-pointer[style*="--color-Buy"]'))
+        .filter(el => el && el.offsetParent !== null);
+      for (const el of nodes) {
+        const v = parseNumericText(el.textContent);
+        if (isFinite(v) && v > 0) return v;
+      }
+    } catch (e) {}
+    return null;
+  }
+  function getBestAskPriceStrict() {
+    try {
+      const nodes = Array.from(document.querySelectorAll('div.flex-1.cursor-pointer[style*="--color-Sell"]'))
+        .filter(el => el && el.offsetParent !== null);
+      for (const el of nodes) {
+        const v = parseNumericText(el.textContent);
+        if (isFinite(v) && v > 0) return v;
+      }
+    } catch (e) {}
     return null;
   }
 
