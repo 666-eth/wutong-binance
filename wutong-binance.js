@@ -5,9 +5,6 @@
 // @description  币安Alpha助手
 // @author       @wutongge_BTCC
 // @match        https://www.binance.com/*/alpha/*
-// @match        https://www.binance.com/alpha/*
-// @match        https://*.binance.com/*/alpha/*
-// @match        https://*.binance.com/alpha/*
 // @grant        GM_xmlhttpRequest
 // @connect      raw.githubusercontent.com
 // @run-at       document-start
